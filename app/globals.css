@@ -101,6 +101,9 @@ button { color: inherit; }
 .mountain-glow { fill: none; stroke: var(--sky); stroke-opacity: .07; stroke-width: 80; filter: url(#mountain-blur); }
 .mountain-area { fill: url(#mountain-fill); opacity: 0; animation: reveal .9s .8s ease forwards; }
 .mountain-line { fill: none; stroke: var(--sky); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 1300; stroke-dashoffset: 1300; animation: draw 1.8s .25s cubic-bezier(.3,.1,.2,1) forwards; }
+.mountain-current { fill: none; stroke: rgba(255,255,255,.92); stroke-width: 1.8; stroke-linecap: round; stroke-dasharray: 2 20; animation: current-flow .95s linear infinite; }
+.electric-particle { fill: #bfeeff; opacity: .9; }
+.electric-particle-core { fill: #fff; opacity: 1; }
 
 .dashboard-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(290px, 1fr); gap: 32px; align-items: start; }
 .glass-card { background: rgba(255,255,255,.43); border: 1px solid rgba(255,255,255,.72); box-shadow: 0 2px 12px rgba(21,48,61,.045); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
@@ -167,6 +170,7 @@ button { color: inherit; }
 
 @keyframes draw { to { stroke-dashoffset: 0; } }
 @keyframes reveal { to { opacity: 1; } }
+@keyframes current-flow { from { stroke-dashoffset: 22; } to { stroke-dashoffset: 0; } }
 @keyframes pulse { 0%, 100% { box-shadow: 0 14px 34px rgba(135,206,235,.4); } 50% { box-shadow: 0 14px 42px rgba(135,206,235,.62); } }
 
 @media (max-width: 760px) {
@@ -191,4 +195,5 @@ button { color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .electric-particles, .mountain-current { display: none; }
 }

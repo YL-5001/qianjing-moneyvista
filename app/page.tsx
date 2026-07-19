@@ -10,6 +10,17 @@ const quickTags = [
 ] as const;
 
 const WEALTH_PROGRESS = 45;
+const WEALTH_PATH = "M-50 450 Q150 420 300 350 T600 250 T1050 100";
+const ELECTRIC_PARTICLES = [
+  { radius: 3.2, duration: 2.8, delay: -0.2 },
+  { radius: 1.8, duration: 3.4, delay: -0.7 },
+  { radius: 2.4, duration: 2.5, delay: -1.1 },
+  { radius: 1.5, duration: 3.1, delay: -1.5 },
+  { radius: 2.8, duration: 3.7, delay: -2.0 },
+  { radius: 1.7, duration: 2.7, delay: -2.4 },
+  { radius: 2.2, duration: 3.3, delay: -2.8 },
+  { radius: 1.4, duration: 2.4, delay: -3.2 },
+] as const;
 
 export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -83,15 +94,43 @@ export default function Home() {
               <filter id="mountain-blur">
                 <feGaussianBlur stdDeviation="36" />
               </filter>
+              <filter id="particle-glow" x="-300%" y="-300%" width="700%" height="700%">
+                <feGaussianBlur stdDeviation="2.2" result="particle-blur" />
+                <feMerge>
+                  <feMergeNode in="particle-blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
               <clipPath id="wealth-progress-clip">
                 <rect x="0" y="0" width={`${WEALTH_PROGRESS}%`} height="500" />
               </clipPath>
             </defs>
-            <path className="mountain-track" d="M-50 450 Q150 420 300 350 T600 250 T1050 100" />
+            <path id="wealth-curve-path" className="mountain-track" d={WEALTH_PATH} />
             <g clipPath="url(#wealth-progress-clip)">
-              <path className="mountain-glow" d="M-50 450 Q150 420 300 350 T600 250 T1050 100" />
+              <path className="mountain-glow" d={WEALTH_PATH} />
               <path className="mountain-area" d="M-50 500 V450 Q150 420 300 350 T600 250 T1050 100 V500Z" />
-              <path className="mountain-line" d="M-50 450 Q150 420 300 350 T600 250 T1050 100" />
+              <path className="mountain-line" d={WEALTH_PATH} />
+              <path className="mountain-current" d={WEALTH_PATH} />
+              <g className="electric-particles" filter="url(#particle-glow)">
+                {ELECTRIC_PARTICLES.map((particle, index) => (
+                  <circle
+                    key={`${particle.duration}-${particle.delay}`}
+                    className={index % 3 === 0 ? "electric-particle electric-particle-core" : "electric-particle"}
+                    r={particle.radius}
+                  >
+                    <animateMotion
+                      dur={`${particle.duration}s`}
+                      begin={`${particle.delay}s`}
+                      repeatCount="indefinite"
+                      keyPoints={`0;${WEALTH_PROGRESS / 100}`}
+                      keyTimes="0;1"
+                      calcMode="linear"
+                    >
+                      <mpath href="#wealth-curve-path" />
+                    </animateMotion>
+                  </circle>
+                ))}
+              </g>
             </g>
           </svg>
         </div>
