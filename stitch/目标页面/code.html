@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN" style=""><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"/><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-container": "#87ceeb",
+                      "on-tertiary-container": "#515053",
+                      "on-secondary": "#ffffff",
+                      "tertiary-fixed-dim": "#c8c6c8",
+                      "surface-bright": "#f9f9fb",
+                      "on-primary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-secondary-fixed-variant": "#00458f",
+                      "background-white": "#FFFFFF",
+                      "on-primary-fixed": "#001f29",
+                      "secondary-container": "#0372e4",
+                      "text-primary": "#1D1D1F",
+                      "on-background": "#1a1c1d",
+                      "surface-container-low": "#f3f3f5",
+                      "on-tertiary-fixed": "#1b1b1d",
+                      "on-secondary-fixed": "#001b3f",
+                      "on-surface": "#1a1c1d",
+                      "surface-variant": "#e2e2e4",
+                      "on-error-container": "#93000a",
+                      "on-surface-variant": "#3f484c",
+                      "secondary-fixed-dim": "#abc7ff",
+                      "inverse-primary": "#89d0ed",
+                      "surface-container-highest": "#e2e2e4",
+                      "outline": "#6f787d",
+                      "surface-container": "#eeeef0",
+                      "primary-fixed": "#baeaff",
+                      "text-secondary": "#6E6E73",
+                      "outline-variant": "#bfc8cd",
+                      "inverse-on-surface": "#f0f0f2",
+                      "tertiary": "#5f5e60",
+                      "surface-container-high": "#e8e8ea",
+                      "secondary": "#005ab7",
+                      "background": "#f9f9fb",
+                      "surface": "#f9f9fb",
+                      "inverse-surface": "#2f3132",
+                      "surface-tint": "#0c6780",
+                      "tertiary-container": "#c6c3c6",
+                      "tertiary-fixed": "#e4e2e4",
+                      "on-primary-fixed-variant": "#004d62",
+                      "primary": "#0c6780",
+                      "error-container": "#ffdad6",
+                      "secondary-fixed": "#d7e2ff",
+                      "on-primary-container": "#005870",
+                      "on-tertiary-fixed-variant": "#474649",
+                      "on-error": "#ffffff",
+                      "glass-stroke": "rgba(255, 255, 255, 0.4)",
+                      "surface-dim": "#d9dadc",
+                      "on-secondary-container": "#fefcff",
+                      "error": "#ba1a1a",
+                      "primary-fixed-dim": "#89d0ed",
+                      "on-tertiary": "#ffffff",
+                      "surface-gray": "#F5F5F7"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-sm": "8px",
+                      "stack-lg": "32px",
+                      "margin-mobile": "20px",
+                      "stack-md": "16px",
+                      "section-gap": "80px",
+                      "gutter": "24px",
+                      "container-max": "1200px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": ["Inter"],
+                      "body-md": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "label-md": ["Inter"],
+                      "label-sm": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "body-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                      "body-md": ["17px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                      "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                      "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                      "headline-lg": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "display-lg": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-lg": ["19px", {"lineHeight": "1.5", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    }catch(_e){}</script>
+<style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes drawPath {
+            from { stroke-dashoffset: 200; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes fabPulse {
+            0% { box-shadow: 0 0 0 0 rgba(135, 206, 235, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(135, 206, 235, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(135, 206, 235, 0); }
+        }
+
+        .animate-fade-in-up {
+            opacity: 0;
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            will-change: transform, opacity;
+        }
+
+        .climb-path {
+            stroke-dasharray: 200;
+            stroke-dashoffset: 200;
+            will-change: stroke-dashoffset;
+        }
+
+        .climb-path.active {
+            animation: drawPath 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .glass-card {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+        }
+
+        .fab-pulse {
+            animation: fabPulse 2s infinite;
+        }
+
+        .reveal-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head><body class="bg-surface font-body-md text-text-primary overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/70 backdrop-blur-xl border-b border-glass-stroke h-16"><div class="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto h-full"><div class="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"><img alt="MoneyVista Logo" class="h-8 w-auto" src="https://lh3.googleusercontent.com/aida/AP1WRLv2OWCAemUymu3m6hka2Pb1FRriZz98I5sQJu4qGIMUa66I60Eql7VSkzkGEirHk--sZlsWcYihCn05vJovj0eMyCr8rWQiLz6MpGYjIkTjrjbiNFwLZKf8aGxahuahmSOqP5mZ3ynfB5bvmUlmBHCkjiin1Loxzbr6zWIqgYaqvv8pdLt37LZ8lcJ5tgpJ_Z8QJZc98PZ9GmKblxM7v_WICAxG8tvIHOjfK2NRxOMzitvnz5M47UlG1q2r"/><span class="font-headline-md text-headline-md font-bold text-primary">钱景</span></div><div class="hidden md:flex gap-8 items-center"><a class="font-label-md text-label-md text-text-secondary hover:text-primary transition-all hover:scale-110 origin-center" href="#">Dashboard</a><a class="font-label-md text-label-md text-text-secondary hover:text-primary transition-all hover:scale-110 origin-center" href="#">Assets</a><a class="font-label-md text-label-md text-primary font-bold border-b-2 border-primary pb-1 transition-all hover:scale-110 origin-center" href="#">Goals</a><a class="font-label-md text-label-md text-text-secondary hover:text-primary transition-all hover:scale-110 origin-center" href="#">Reports</a></div><div class="flex items-center gap-4"><button class="material-symbols-outlined text-text-secondary hover:text-primary transition-all hover:scale-110">notifications</button><div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container ml-2 cursor-pointer ring-2 ring-transparent hover:ring-primary/20 transition-all"><img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnvXRqXIPQTUTJYgjD1CejuUqXfNmGuH0Vc-72PaVVrYafJQqiXQRSGuG-v0fxuOPtAtukPQMtGCQRWeW9jL2r7IM6vJp_mcgMjz4hWzODPZOWtiJg9wb6cZ5cTKWFsIdn3pmu5nmT32Ia0px5Gzs8PZhy_UEBWR-B7hjMr5brG5thZO6P3dNZcpLXYC9oPaRU300v2NDa-ulEFF17swFmJdyyMnr1n2nmh3EJ-pJCiSPT01qikQGe6Sf_NocRpkBHFvNwi5hYxkmI"/></div></div></div></nav>
+<!-- Content Canvas -->
+<main class="pt-32 pb-section-gap px-margin-mobile md:px-gutter max-w-container-max mx-auto">
+<!-- Hero Section -->
+<header class="mb-stack-lg text-center md:text-left animate-fade-in-up">
+<div class="inline-block px-4 py-1.5 rounded-full bg-primary-container/20 text-primary font-label-md text-label-md mb-stack-sm">
+                财富巅峰计划
+            </div>
+<h1 class="font-display-lg text-display-lg md:text-display-lg text-headline-lg-mobile mb-4">我的财富巅峰</h1>
+<p class="font-body-lg text-body-lg text-text-secondary max-w-2xl">
+                每一次储蓄都是向上的攀登。在这里，我们将复杂的财务规划转化为清晰的登顶路径，助您稳步抵达梦想的高度。
+            </p>
+</header>
+<!-- Goal Tracking Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-gutter mt-12">
+<!-- Goal Card 1: House -->
+<div class="glass-card p-8 rounded-xl relative group overflow-hidden animate-fade-in-up" style="animation-delay: 0.1s;">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg overflow-hidden">
+<img alt="金币图标" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLvWo7BiTsSWIR5rWtsqlwrJlnXEW1VMuhnZCsq4uSdLg-yCvhj84iKJ1R6AzJco81bVIf8iSSll8EvGE7UY8GhmtXKKS_0CdEA4haO8FVRn_O6umGscds8IXSE50EGNe5ePNZ12hrZgjUkU0qB9ZPOUZHqMKHCwJkZP6oHRTeG4L7HGz_zGEL1lpa26Q2DwQsIGrUg1NaG5G7VH-y89XOuIUiWgXZqMA40odg6oFSuhIvcTl6Pt02lTNUVL"/>
+</div>
+<span class="font-label-sm text-label-sm text-primary bg-primary-container/30 px-3 py-1 rounded-full">进行中</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-2">买房基金</h3>
+<p class="text-text-secondary font-label-md text-label-md mb-8">首套住房置业计划</p>
+<!-- Climbing Curve -->
+<div class="h-24 w-full mb-6">
+<svg class="w-full h-full overflow-visible" viewbox="0 0 200 60">
+<path class="climb-path" d="M0,50 Q50,45 100,25 T200,5" fill="none" stroke="#87ceeb" stroke-linecap="round" stroke-width="4" style="animation-delay: 0.8s;"></path>
+<circle cx="130" cy="18" fill="#0c6780" r="4"></circle>
+<text fill="#0c6780" font-size="8" text-anchor="middle" x="130" y="10">当前位置</text>
+</svg>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-end">
+<div>
+<span class="font-label-sm text-label-sm text-text-secondary block">当前累积</span>
+<span class="font-headline-md text-headline-md text-primary">¥ 650,000</span>
+</div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm text-text-secondary block">目标值</span>
+<span class="font-body-md text-body-md">¥ 1,000,000</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-3 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full transition-all duration-1000 delay-500" style="width: 65%"></div>
+</div>
+<div class="flex justify-between font-label-md text-label-md">
+<span class="text-primary font-bold">65% 已攀登</span>
+<span class="text-text-secondary">预计登顶: 18个月</span>
+</div>
+</div>
+</div>
+<!-- Goal Card 2: Travel -->
+<div class="glass-card p-8 rounded-xl relative group overflow-hidden animate-fade-in-up" style="animation-delay: 0.2s;">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg overflow-hidden">
+<span class="material-symbols-outlined text-primary-container text-4xl">public</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary bg-primary-container/30 px-3 py-1 rounded-full">加速中</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-2">环球旅行</h3>
+<p class="text-text-secondary font-label-md text-label-md mb-8">极光与热带雨林探索</p>
+<div class="h-24 w-full mb-6">
+<svg class="w-full h-full overflow-visible" viewbox="0 0 200 60">
+<path class="climb-path" d="M0,55 Q40,50 80,45 T160,15" fill="none" stroke="#87ceeb" stroke-linecap="round" stroke-width="4" style="animation-delay: 1.0s;"></path>
+<circle cx="160" cy="15" fill="#0c6780" r="4"></circle>
+</svg>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-end">
+<div>
+<span class="font-label-sm text-label-sm text-text-secondary block">当前累积</span>
+<span class="font-headline-md text-headline-md text-primary">¥ 164,000</span>
+</div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm text-text-secondary block">目标值</span>
+<span class="font-body-md text-body-md">¥ 200,000</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-3 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full transition-all duration-1000 delay-700" style="width: 82%"></div>
+</div>
+<div class="flex justify-between font-label-md text-label-md">
+<span class="text-primary font-bold">82% 已攀登</span>
+<span class="text-text-secondary">预计登顶: 4个月</span>
+</div>
+</div>
+</div>
+<!-- Goal Card 3: Retirement -->
+<div class="glass-card p-8 rounded-xl relative group overflow-hidden animate-fade-in-up" style="animation-delay: 0.3s;">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg overflow-hidden">
+<img alt="钱袋图标" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLtGl_vbR_Xudg-QXvGvAvr_WypJwBUMjwsfEWXTHB8_HtCWpuh90lOIuOBeSOdnK3l3QEfMAIT-Nmn9IELIeQ4MzWJFfXbc6Zqy0Ln4mqkDzgEFM-8Kv0DYF3CwzyWJczWpPpRFScA_MS7qESKkgILYJ2Upw2QoblTLWRaig8dHkLCpqEPoERrIbK2uPK-ZanPLn2U4HmK_N9myvA5axev9EVJwZEN7rmOgLW69K9VkhIyO6rPojc-AG42J"/>
+</div>
+<span class="font-label-sm text-label-sm text-text-secondary bg-surface-container-high px-3 py-1 rounded-full">长跑中</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-2">退休储备</h3>
+<p class="text-text-secondary font-label-md text-label-md mb-8">悦享晚年生活保障</p>
+<div class="h-24 w-full mb-6">
+<svg class="w-full h-full overflow-visible" viewbox="0 0 200 60">
+<path class="climb-path" d="M0,55 L50,52 L100,48 L150,45" fill="none" stroke="#87ceeb" stroke-linecap="round" stroke-width="4" style="animation-delay: 1.2s;"></path>
+<circle cx="60" cy="51" fill="#0c6780" r="4"></circle>
+</svg>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-end">
+<div>
+<span class="font-label-sm text-label-sm text-text-secondary block">当前累积</span>
+<span class="font-headline-md text-headline-md text-primary">¥ 480,000</span>
+</div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm text-text-secondary block">目标值</span>
+<span class="font-body-md text-body-md">¥ 5,000,000</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-3 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full transition-all duration-1000 delay-1000" style="width: 12%"></div>
+</div>
+<div class="flex justify-between font-label-md text-label-md">
+<span class="text-primary font-bold">12% 已攀登</span>
+<span class="text-text-secondary">预计登顶: 20年</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Achieved Peaks Section -->
+<section class="mt-section-gap">
+<div class="flex items-center justify-between mb-8 reveal-on-scroll">
+<h2 class="font-headline-lg text-headline-lg text-headline-lg-mobile">已达巅峰</h2>
+<div class="h-[1px] flex-grow mx-8 bg-surface-container-high"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-lg">
+<!-- Completed 1 -->
+<div class="flex items-center p-6 bg-surface-container-low rounded-xl border border-glass-stroke shadow-sm hover:shadow-md transition-shadow reveal-on-scroll" style="transition-delay: 0.1s;">
+<div class="w-14 h-14 rounded-full bg-primary-container/20 flex items-center justify-center mr-6">
+<span class="material-symbols-outlined text-primary text-3xl font-bold" style='font-variation-settings: "FILL" 1;'>check_circle</span>
+</div>
+<div class="flex-grow">
+<h4 class="font-headline-md text-headline-md leading-tight">首台汽车购置计划</h4>
+<p class="text-text-secondary font-label-md text-label-md">达成日期: 2023年10月</p>
+</div>
+<div class="text-right">
+<span class="font-body-md text-body-md font-bold text-primary">¥ 350,000</span>
+</div>
+</div>
+<!-- Completed 2 -->
+<div class="flex items-center p-6 bg-surface-container-low rounded-xl border border-glass-stroke shadow-sm hover:shadow-md transition-shadow reveal-on-scroll" style="transition-delay: 0.2s;">
+<div class="w-14 h-14 rounded-full bg-primary-container/20 flex items-center justify-center mr-6">
+<span class="material-symbols-outlined text-primary text-3xl font-bold" style='font-variation-settings: "FILL" 1;'>check_circle</span>
+</div>
+<div class="flex-grow">
+<h4 class="font-headline-md text-headline-md leading-tight">应急备用金</h4>
+<p class="text-text-secondary font-label-md text-label-md">达成日期: 2023年02月</p>
+</div>
+<div class="text-right">
+<span class="font-body-md text-body-md font-bold text-primary">¥ 100,000</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<div class="fixed bottom-32 right-10 w-80 bg-surface/70 backdrop-blur-xl border border-glass-stroke rounded-xl shadow-2xl p-6 z-50 transition-all duration-300 opacity-0 translate-y-4 pointer-events-none" id="new-goal-popup">
+<h3 class="font-headline-md text-headline-md mb-4">设定新目标</h3>
+<div class="space-y-4">
+<div>
+<label class="block font-label-sm text-label-sm text-text-secondary mb-1">目标名称</label>
+<input class="w-full bg-surface-container-low border-none rounded-lg px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20" placeholder="例如：购车基金" type="text"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-text-secondary mb-1">目标金额 (¥)</label>
+<input class="w-full bg-surface-container-low border-none rounded-lg px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20" placeholder="0.00" type="number"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-text-secondary mb-1">初始金额 (¥)</label>
+<input class="w-full bg-surface-container-low border-none rounded-lg px-3 py-2 text-body-md focus:ring-2 focus:ring-primary/20" placeholder="0.00" type="number"/>
+</div>
+<div class="flex gap-3 pt-2">
+<button class="flex-1 py-2 rounded-lg bg-surface-container-high text-text-primary font-label-md hover:bg-surface-variant transition-colors" onclick="document.getElementById('new-goal-popup').classList.add('opacity-0', 'translate-y-4', 'pointer-events-none')">取消</button>
+<button class="flex-1 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md hover:opacity-90 transition-opacity">创建</button>
+</div>
+</div>
+</div>
+<button class="fixed bottom-10 right-10 w-16 h-16 bg-primary-container rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all z-50 group fab-pulse" onclick="const p = document.getElementById('new-goal-popup'); p.classList.toggle('opacity-0'); p.classList.toggle('translate-y-4'); p.classList.toggle('pointer-events-none');">
+<span class="material-symbols-outlined text-on-primary-container text-4xl transition-transform group-hover:rotate-90">add</span>
+<div class="absolute right-20 bg-white px-4 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap font-label-md text-label-md text-text-primary">
+            设定新目标
+        </div>
+</button>
+<!-- Footer -->
+<footer class="w-full py-stack-lg bg-surface-bright dark:bg-surface-dim mt-section-gap">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-gutter max-w-container-max mx-auto">
+<div class="font-label-md text-label-md font-semibold text-text-primary mb-4 md:mb-0">钱景 MoneyVista</div>
+<div class="flex space-x-6 mb-4 md:mb-0">
+<a class="font-label-sm text-label-sm text-text-secondary hover:text-primary transition-colors" href="#">隐私政策</a>
+<a class="font-label-sm text-label-sm text-text-secondary hover:text-primary transition-colors" href="#">服务协议</a>
+<a class="font-label-sm text-label-sm text-text-secondary hover:text-primary transition-colors" href="#">帮助中心</a>
+</div>
+<div class="font-label-sm text-label-sm text-text-secondary">
+                © 2024 MoneyVista. All rights reserved.
+            </div>
+</div>
+</footer>
+<!-- Background Decorative Elements -->
+<div class="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 opacity-30 overflow-hidden">
+<div class="absolute top-[10%] right-[-5%] w-[400px] h-[400px] rounded-full bg-primary-container/20 blur-3xl" style="animation: float 10s ease-in-out infinite;"></div>
+<div class="absolute bottom-[20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-secondary-fixed-dim/10 blur-3xl" style="animation: float 8s ease-in-out infinite reverse;"></div>
+</div>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Trigger path animations with a small delay for load sequence
+            setTimeout(() => {
+                document.querySelectorAll('.climb-path').forEach(path => {
+                    path.classList.add('active');
+                });
+            }, 500);
+
+            // Intersection Observer for scroll animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const revealObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.reveal-on-scroll').forEach(el => {
+                revealObserver.observe(el);
+            });
+
+            // Card mouse hover effect (interactive tilt-ish look)
+            document.querySelectorAll('.glass-card').forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    
+                    const rotateX = (y - centerY) / 20;
+                    const rotateY = (centerX - x) / 20;
+                    
+                    card.style.transform = `perspective(1000px) translateY(-8px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'perspective(1000px) translateY(0) rotateX(0) rotateY(0)';
+                });
+            });
+        });
+
+        // Floating animation for background blobs
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes float {
+                0% { transform: translate(0, 0); }
+                50% { transform: translate(20px, 30px); }
+                100% { transform: translate(0, 0); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body></html>
