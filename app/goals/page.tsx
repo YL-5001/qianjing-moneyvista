@@ -13,13 +13,34 @@ type GoalData = {
   target: number;
   estimate: string;
   path: string;
+  records: GoalRecord[];
   muted?: boolean;
 };
 
+type GoalRecord = {
+  id: string;
+  date: string;
+  amount: number;
+  note: string;
+  balance: number;
+};
+
 const INITIAL_GOALS: GoalData[] = [
-  { id: "house", title: "买房基金", subtitle: "首套住房置业计划", icon: "paid", status: "进行中", current: 650000, target: 1000000, estimate: "18个月", path: "M0 52 Q48 48 96 28 T200 8" },
-  { id: "travel", title: "环球旅行", subtitle: "极光与热带雨林探索", icon: "public", status: "加速中", current: 164000, target: 200000, estimate: "4个月", path: "M0 55 Q42 50 82 45 T160 15 T200 5" },
-  { id: "retirement", title: "退休储备", subtitle: "悦享晚年生活保障", icon: "account_balance_wallet", status: "长跑中", current: 480000, target: 5000000, estimate: "20年", path: "M0 55 L50 52 L100 48 L150 45 L200 42", muted: true },
+  { id: "house", title: "买房基金", subtitle: "首套住房置业计划", icon: "paid", status: "进行中", current: 650000, target: 1000000, estimate: "18个月", path: "M0 52 Q48 48 96 28 T200 8", records: [
+    { id: "house-3", date: "2026-07-19", amount: 5000, note: "工资结余", balance: 650000 },
+    { id: "house-2", date: "2026-06-28", amount: 2000, note: "月度储蓄", balance: 645000 },
+    { id: "house-1", date: "2026-06-12", amount: 3000, note: "投资收益", balance: 643000 },
+  ] },
+  { id: "travel", title: "环球旅行", subtitle: "极光与热带雨林探索", icon: "public", status: "加速中", current: 164000, target: 200000, estimate: "4个月", path: "M0 55 Q42 50 82 45 T160 15 T200 5", records: [
+    { id: "travel-3", date: "2026-07-10", amount: 8000, note: "旅行专项储蓄", balance: 164000 },
+    { id: "travel-2", date: "2026-06-16", amount: 4500, note: "项目奖金", balance: 156000 },
+    { id: "travel-1", date: "2026-05-30", amount: 3000, note: "月度储蓄", balance: 151500 },
+  ] },
+  { id: "retirement", title: "退休储备", subtitle: "悦享晚年生活保障", icon: "account_balance_wallet", status: "长跑中", current: 480000, target: 5000000, estimate: "20年", path: "M0 55 L50 52 L100 48 L150 45 L200 42", muted: true, records: [
+    { id: "retirement-3", date: "2026-07-01", amount: 6000, note: "定期投入", balance: 480000 },
+    { id: "retirement-2", date: "2026-06-01", amount: 6000, note: "定期投入", balance: 474000 },
+    { id: "retirement-1", date: "2026-05-01", amount: 6000, note: "定期投入", balance: 468000 },
+  ] },
 ];
 
 const completedGoals = [
@@ -28,6 +49,11 @@ const completedGoals = [
 ] as const;
 
 const formatCurrency = (value: number) => `¥ ${new Intl.NumberFormat("zh-CN").format(value)}`;
+const formatRecordDate = (value: string) => new Intl.DateTimeFormat("zh-CN", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+}).format(new Date(`${value}T12:00:00`));
 const getProgress = (goal: GoalData) => Math.min(100, Math.round((goal.current / Math.max(goal.target, 1)) * 100));
 const matchGoalIcon = (title: string) => {
   const rules: Array<[RegExp, string]> = [
@@ -48,6 +74,7 @@ const matchGoalIcon = (title: string) => {
 export default function GoalsPage() {
   const [goals, setGoals] = useState(INITIAL_GOALS);
   const [flippedGoal, setFlippedGoal] = useState<string | null>(null);
+  const [historyGoal, setHistoryGoal] = useState<string | null>(null);
   const [adjustments, setAdjustments] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<Record<string, string>>({});
   const [formOpen, setFormOpen] = useState(false);
@@ -57,6 +84,7 @@ export default function GoalsPage() {
   useEffect(() => {
     const closeOnEscape = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") {
+        setHistoryGoal(null);
         setFlippedGoal(null);
         setFormOpen(false);
       }
@@ -85,13 +113,34 @@ export default function GoalsPage() {
       return;
     }
 
-    setGoals((currentGoals) => currentGoals.map((goal) => goal.id === goalId
-      ? { ...goal, current: Math.max(0, goal.current + amount * direction) }
-      : goal));
+    const selectedGoal = goals.find((goal) => goal.id === goalId);
+    if (!selectedGoal) return;
+    const nextCurrent = Math.max(0, selectedGoal.current + amount * direction);
+    const change = nextCurrent - selectedGoal.current;
+    const appliedAmount = Math.abs(change);
+    const recordId = `record-${Date.now()}-${goalId}`;
+    const recordDate = new Date().toISOString().slice(0, 10);
+
+    setGoals((currentGoals) => currentGoals.map((goal) => {
+      if (goal.id !== goalId || change === 0) return goal;
+      return {
+        ...goal,
+        current: nextCurrent,
+        records: [{
+          id: recordId,
+          date: recordDate,
+          amount: change,
+          note: direction === 1 ? "手动增加" : "手动减少",
+          balance: nextCurrent,
+        }, ...goal.records],
+      };
+    }));
     setAdjustments((current) => ({ ...current, [goalId]: "" }));
     setFeedback((current) => ({
       ...current,
-      [goalId]: `${direction === 1 ? "已增加" : "已减少"} ${formatCurrency(amount)}`,
+      [goalId]: appliedAmount > 0
+        ? `${direction === 1 ? "已增加" : "已减少"} ${formatCurrency(appliedAmount)}`
+        : "当前累计已为 ¥ 0",
     }));
     window.setTimeout(() => setFeedback((current) => ({ ...current, [goalId]: "" })), 1800);
   };
@@ -115,9 +164,17 @@ export default function GoalsPage() {
       target,
       estimate: "待规划",
       path: "M0 55 Q48 51 92 38 T155 18 T200 8",
+      records: current > 0 ? [{
+        id: `record-${Date.now()}-initial`,
+        date: new Date().toISOString().slice(0, 10),
+        amount: current,
+        note: "初始金额",
+        balance: current,
+      }] : [],
     };
 
     setGoals((currentGoals) => [...currentGoals, newGoal]);
+    setHistoryGoal(null);
     setFlippedGoal(null);
     setCreated(true);
     window.setTimeout(() => goalListRef.current?.scrollTo({ left: goalListRef.current.scrollWidth, behavior: "smooth" }), 80);
@@ -147,6 +204,8 @@ export default function GoalsPage() {
             {goals.map((goal, index) => {
               const progress = getProgress(goal);
               const isFlipped = flippedGoal === goal.id;
+              const historyOpen = historyGoal === goal.id;
+              const editTabIndex = isFlipped && !historyOpen ? 0 : -1;
               const pathId = `goal-path-${goal.id}`;
 
               return (
@@ -158,7 +217,7 @@ export default function GoalsPage() {
                       tabIndex={isFlipped ? -1 : 0}
                       aria-label={`编辑${goal.title}`}
                       aria-pressed={isFlipped}
-                      onClick={() => setFlippedGoal(goal.id)}
+                      onClick={() => { setHistoryGoal(null); setFlippedGoal(goal.id); }}
                       onKeyDown={(event) => flipWithKeyboard(event, goal.id)}
                     >
                       <div className="goal-card-topline">
@@ -191,18 +250,21 @@ export default function GoalsPage() {
                     <section className="goal-card-face goal-card-back" aria-hidden={!isFlipped}>
                       <div className="goal-back-heading">
                         <div><span>编辑财富目标</span><h2>{goal.title}</h2></div>
-                        <button type="button" onClick={() => setFlippedGoal(null)} tabIndex={isFlipped ? 0 : -1} aria-label={`关闭${goal.title}编辑`}>
+                        <button type="button" onClick={() => { setHistoryGoal(null); setFlippedGoal(null); }} tabIndex={editTabIndex} aria-label={`关闭${goal.title}编辑`}>
                           <span className="material-symbols-outlined" aria-hidden="true">close</span>
                         </button>
                       </div>
 
                       <label htmlFor={`title-${goal.id}`}>目标名称</label>
-                      <input id={`title-${goal.id}`} value={goal.title} onChange={(event) => updateGoal(goal.id, { title: event.target.value })} tabIndex={isFlipped ? 0 : -1} />
+                      <input id={`title-${goal.id}`} value={goal.title} onChange={(event) => updateGoal(goal.id, { title: event.target.value })} tabIndex={editTabIndex} />
                       <label htmlFor={`target-${goal.id}`}>目标值 (¥)</label>
-                      <input id={`target-${goal.id}`} type="number" min="1" value={goal.target} onChange={(event) => updateGoal(goal.id, { target: Math.max(1, Number(event.target.value)) })} tabIndex={isFlipped ? 0 : -1} />
+                      <input id={`target-${goal.id}`} type="number" min="1" value={goal.target} onChange={(event) => updateGoal(goal.id, { target: Math.max(1, Number(event.target.value)) })} tabIndex={editTabIndex} />
 
                       <div className="goal-back-summary">
-                        <div><span>当前累计</span><strong>{formatCurrency(goal.current)}</strong></div>
+                        <button className="goal-history-trigger" type="button" onClick={() => setHistoryGoal(goal.id)} tabIndex={editTabIndex} aria-label={`查看${goal.title}累计记录`}>
+                          <span>当前累计</span><strong>{formatCurrency(goal.current)}</strong>
+                          <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                        </button>
                         <div><span>完成进度</span><strong>{progress}%</strong></div>
                       </div>
 
@@ -218,13 +280,36 @@ export default function GoalsPage() {
                             placeholder="输入金额"
                             value={adjustments[goal.id] ?? ""}
                             onChange={(event) => setAdjustments((current) => ({ ...current, [goal.id]: event.target.value }))}
-                            tabIndex={isFlipped ? 0 : -1}
+                            tabIndex={editTabIndex}
                           />
-                          <button className="subtract" type="button" onClick={() => adjustCurrent(goal.id, -1)} tabIndex={isFlipped ? 0 : -1} aria-label="从当前累计值中减去">−</button>
-                          <button className="add" type="button" onClick={() => adjustCurrent(goal.id, 1)} tabIndex={isFlipped ? 0 : -1} aria-label="加到当前累计值上">＋</button>
+                          <button className="subtract" type="button" onClick={() => adjustCurrent(goal.id, -1)} tabIndex={editTabIndex} aria-label="从当前累计值中减去">−</button>
+                          <button className="add" type="button" onClick={() => adjustCurrent(goal.id, 1)} tabIndex={editTabIndex} aria-label="加到当前累计值上">＋</button>
                         </div>
                         <p className={feedback[goal.id] ? "visible" : ""} role="status">{feedback[goal.id] || "输入金额后选择增加或减少"}</p>
                       </div>
+
+                      <aside className={`goal-history-drawer ${historyOpen ? "open" : ""}`} aria-hidden={!historyOpen} aria-label={`${goal.title}累计记录`}>
+                        <div className="goal-history-heading">
+                          <button type="button" onClick={() => setHistoryGoal(null)} tabIndex={historyOpen ? 0 : -1} aria-label="返回目标编辑">
+                            <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                          </button>
+                          <div><span>累计记录</span><strong>{goal.records.length} 笔</strong></div>
+                        </div>
+                        <div className="goal-history-total"><span>当前累计</span><strong>{formatCurrency(goal.current)}</strong></div>
+                        {goal.records.length > 0 ? (
+                          <div className="goal-history-list">
+                            {goal.records.map((record) => (
+                              <article className="goal-history-row" key={record.id}>
+                                <span className="goal-history-dot" aria-hidden="true" />
+                                <div><time dateTime={record.date}>{formatRecordDate(record.date)}</time><p>{record.note}</p><small>调整后累计 {formatCurrency(record.balance)}</small></div>
+                                <strong className={record.amount >= 0 ? "positive" : "negative"}>{record.amount >= 0 ? "+" : "−"}{formatCurrency(Math.abs(record.amount))}</strong>
+                              </article>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="goal-history-empty"><span className="material-symbols-outlined" aria-hidden="true">history</span><strong>还没有累计记录</strong><p>首次调整金额后，记录会出现在这里。</p></div>
+                        )}
+                      </aside>
                     </section>
                   </div>
                 </article>
