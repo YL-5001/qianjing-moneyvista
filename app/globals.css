@@ -97,6 +97,7 @@ button { color: inherit; }
 
 .wealth-mountain { position: absolute; z-index: 0; left: 0; top: 96px; width: 100%; height: 70vh; pointer-events: none; }
 .wealth-mountain svg { width: 100%; height: 100%; overflow: visible; }
+.mountain-track { fill: none; stroke: #dfe4e7; stroke-width: 3; stroke-linecap: round; }
 .mountain-glow { fill: none; stroke: var(--sky); stroke-opacity: .07; stroke-width: 80; filter: url(#mountain-blur); }
 .mountain-area { fill: url(#mountain-fill); opacity: 0; animation: reveal .9s .8s ease forwards; }
 .mountain-line { fill: none; stroke: var(--sky); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 1300; stroke-dashoffset: 1300; animation: draw 1.8s .25s cubic-bezier(.3,.1,.2,1) forwards; }

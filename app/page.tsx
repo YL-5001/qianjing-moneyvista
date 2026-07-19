@@ -9,6 +9,8 @@ const quickTags = [
   ["工资", "工资收入"],
 ] as const;
 
+const WEALTH_PROGRESS = 45;
+
 export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -81,10 +83,16 @@ export default function Home() {
               <filter id="mountain-blur">
                 <feGaussianBlur stdDeviation="36" />
               </filter>
+              <clipPath id="wealth-progress-clip">
+                <rect x="0" y="0" width={`${WEALTH_PROGRESS}%`} height="500" />
+              </clipPath>
             </defs>
-            <path className="mountain-glow" d="M-50 450 Q150 420 300 350 T600 250 T1050 100" />
-            <path className="mountain-area" d="M-50 500 V450 Q150 420 300 350 T600 250 T1050 100 V500Z" />
-            <path className="mountain-line" d="M-50 450 Q150 420 300 350 T600 250 T1050 100" />
+            <path className="mountain-track" d="M-50 450 Q150 420 300 350 T600 250 T1050 100" />
+            <g clipPath="url(#wealth-progress-clip)">
+              <path className="mountain-glow" d="M-50 450 Q150 420 300 350 T600 250 T1050 100" />
+              <path className="mountain-area" d="M-50 500 V450 Q150 420 300 350 T600 250 T1050 100 V500Z" />
+              <path className="mountain-line" d="M-50 450 Q150 420 300 350 T600 250 T1050 100" />
+            </g>
           </svg>
         </div>
 
@@ -104,7 +112,7 @@ export default function Home() {
                 </div>
                 <div className="progress-copy">
                   <span>进度</span>
-                  <strong>45%</strong>
+                  <strong>{WEALTH_PROGRESS}%</strong>
                 </div>
               </div>
 
