@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { SiteHeader } from "./components/SiteHeader";
 
 const quickTags = [
   ["餐饮", "餐饮支出"],
@@ -60,28 +61,7 @@ export default function Home() {
 
   return (
     <>
-      <header className="topbar">
-        <div className="nav-shell">
-          <a className="brand" href="#top" aria-label="钱景首页">
-            <span className="brand-mark" aria-hidden="true">
-              <span className="brand-chart">↗</span>
-              <span className="brand-mini">MoneyVista</span>
-            </span>
-            <span className="brand-name">钱景</span>
-          </a>
-
-          <nav className="desktop-nav" aria-label="主要导航">
-            <a className="active" href="#dashboard">仪表盘</a>
-            <a href="#assets">资产</a>
-            <a href="#goals">目标</a>
-            <a href="#reports">报告</a>
-          </nav>
-
-          <button className="icon-button notification" type="button" aria-label="通知">
-            <span className="material-symbols-outlined" aria-hidden="true">notifications</span>
-          </button>
-        </div>
-      </header>
+      <SiteHeader active="dashboard" />
 
       <main id="top" className="dashboard-page">
         <div className="wealth-mountain" aria-hidden="true">

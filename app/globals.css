@@ -168,6 +168,68 @@ button { color: inherit; }
 .save-button.saved { background: #22a95d; }
 .modal-handle { display: none; }
 
+/* Goals page */
+.goals-page { position: relative; min-height: 100vh; overflow: hidden; padding: 126px 0 112px; }
+.goals-shell { position: relative; z-index: 2; width: min(1200px, calc(100% - 48px)); margin: 0 auto; }
+.goal-ambient { position: absolute; z-index: 0; border-radius: 50%; filter: blur(70px); pointer-events: none; }
+.goal-ambient-top { width: 430px; height: 430px; right: -110px; top: 60px; background: rgba(135,206,235,.11); }
+.goal-ambient-bottom { width: 520px; height: 520px; left: -180px; bottom: 120px; background: rgba(171,199,255,.07); }
+.goals-hero { animation: goal-rise .75s cubic-bezier(.16,1,.3,1) both; }
+.goals-kicker { display: inline-flex; align-items: center; min-height: 34px; padding: 0 17px; border-radius: 999px; color: #00627b; background: rgba(135,206,235,.2); font-size: 14px; font-weight: 500; }
+.goals-hero h1 { margin: 12px 0 18px; font-size: clamp(42px,4.5vw,56px); line-height: 1.08; letter-spacing: -.035em; }
+.goals-hero p { max-width: 690px; margin: 0; color: var(--muted); font-size: 19px; line-height: 1.55; }
+.goal-card-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 24px; margin-top: 52px; }
+.goal-card { position: relative; min-width: 0; padding: 32px; overflow: hidden; border: 1px solid rgba(255,255,255,.65); border-radius: 16px; background: rgba(255,255,255,.72); box-shadow: 0 14px 38px rgba(22,45,55,.045); backdrop-filter: blur(20px); animation: goal-rise .8s cubic-bezier(.16,1,.3,1) both; transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s; }
+.goal-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,.07); }
+.goal-card-topline { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; }
+.goal-icon { color: var(--sky); font-size: 43px; font-variation-settings: "wght" 420; }
+.goal-status { padding: 6px 14px; border-radius: 999px; color: #00627b; background: rgba(135,206,235,.28); font-size: 12px; font-weight: 700; }
+.goal-status.muted { color: var(--muted); background: #ececee; }
+.goal-card h2 { margin: 0 0 5px; font-size: 24px; line-height: 1.3; }
+.goal-subtitle { margin: 0; color: var(--muted); font-size: 14px; }
+.goal-curve { height: 130px; margin: 20px 0 0; }
+.goal-curve svg { width: 100%; height: 100%; overflow: visible; }
+.goal-climb-path { fill: none; stroke: var(--sky); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 200; stroke-dashoffset: 200; animation: goal-draw 1.35s .35s cubic-bezier(.4,0,.2,1) forwards; }
+.goal-curve circle { fill: #08708b; }
+.goal-curve text { fill: #08708b; font-size: 8px; text-anchor: middle; }
+.goal-values { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.goal-values span { display: block; margin-bottom: 5px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.goal-values strong { display: block; color: #00627b; font-size: 24px; line-height: 1.15; letter-spacing: -.02em; white-space: nowrap; }
+.goal-target { text-align: right; }
+.goal-target strong { color: var(--ink); font-size: 17px; font-weight: 500; }
+.goal-progress { height: 12px; margin-top: 19px; overflow: hidden; border-radius: 999px; background: #e6e6e8; }
+.goal-progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#87ceeb,#78c5e4); transform-origin: left; animation: goal-progress-in 1s .4s cubic-bezier(.16,1,.3,1) both; }
+.goal-progress-copy { display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; font-size: 14px; }
+.goal-progress-copy strong { color: #00627b; }
+.goal-progress-copy span { color: var(--muted); text-align: right; }
+.completed-goals { margin-top: 82px; }
+.completed-heading { display: flex; align-items: center; gap: 30px; margin-bottom: 30px; }
+.completed-heading h2 { margin: 0; font-size: 36px; line-height: 1.2; letter-spacing: -.025em; }
+.completed-heading > span { flex: 1; height: 1px; background: #e2e2e4; }
+.completed-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 32px; }
+.completed-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 22px; min-height: 104px; padding: 24px; border: 1px solid rgba(255,255,255,.65); border-radius: 16px; background: #f3f3f5; box-shadow: 0 3px 10px rgba(0,0,0,.025); }
+.completed-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; color: #08708b; background: rgba(135,206,235,.22); font-size: 31px; font-variation-settings: "FILL" 1; }
+.completed-card h3 { margin: 0 0 3px; font-size: 22px; line-height: 1.25; }
+.completed-card p { margin: 0; color: var(--muted); font-size: 14px; }
+.completed-card > strong { color: #00627b; font-size: 17px; white-space: nowrap; }
+.new-goal-popover { position: fixed; z-index: 55; right: 40px; bottom: 126px; width: 320px; padding: 24px; border: 1px solid rgba(255,255,255,.65); border-radius: 16px; background: rgba(249,249,251,.92); box-shadow: 0 20px 50px rgba(0,0,0,.12); backdrop-filter: blur(24px); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(16px) scale(.98); transition: opacity .25s, transform .25s, visibility .25s; }
+.new-goal-popover.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0) scale(1); }
+.new-goal-popover h2 { margin: 0 0 18px; font-size: 24px; }
+.new-goal-popover label { display: block; margin: 13px 0 6px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.new-goal-popover input { width: 100%; height: 42px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; outline: 0; background: #f3f3f5; }
+.new-goal-popover input:focus { border-color: var(--sky); background: white; box-shadow: 0 0 0 3px rgba(135,206,235,.15); }
+.new-goal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+.new-goal-actions button { height: 42px; border: 0; border-radius: 8px; background: #e8e8ea; cursor: pointer; font-size: 14px; font-weight: 600; }
+.new-goal-actions button:last-child { color: #005870; background: var(--sky); }
+.new-goal-actions button.created { color: white; background: #22a95d; }
+.goal-fab.active span:first-child { transform: rotate(45deg); }
+.goal-fab-label { position: absolute; right: 78px; width: max-content; padding: 9px 13px; border-radius: 9px; color: var(--ink); background: white; box-shadow: 0 7px 22px rgba(0,0,0,.1); font-size: 13px !important; font-weight: 600 !important; opacity: 0; transform: none !important; pointer-events: none; transition: opacity .2s !important; }
+.goal-fab:hover .goal-fab-label { opacity: 1; }
+
+@keyframes goal-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes goal-draw { to { stroke-dashoffset: 0; } }
+@keyframes goal-progress-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
 @keyframes draw { to { stroke-dashoffset: 0; } }
 @keyframes reveal { to { opacity: 1; } }
 @keyframes current-flow { from { stroke-dashoffset: 22; } to { stroke-dashoffset: 0; } }
@@ -191,9 +253,24 @@ button { color: inherit; }
   .savings-modal { width: 100%; border-radius: 38px 38px 0 0; transform: translateY(100%); }
   .savings-modal form { padding: 24px 28px 34px; }
   .modal-handle { display: block; width: 48px; height: 6px; margin: 16px auto 0; border-radius: 999px; background: #e2e2e4; }
+  .goals-page { padding: 104px 0 104px; }
+  .goals-shell { width: calc(100% - 40px); }
+  .goals-hero { text-align: center; }
+  .goals-hero h1 { font-size: 38px; }
+  .goals-hero p { font-size: 17px; }
+  .goal-card-grid, .completed-grid { grid-template-columns: 1fr; }
+  .goal-card { padding: 24px; }
+  .goal-curve { height: 112px; }
+  .completed-goals { margin-top: 64px; }
+  .completed-heading h2 { font-size: 30px; }
+  .completed-card { gap: 14px; padding: 20px; }
+  .completed-card > strong { grid-column: 2; }
+  .new-goal-popover { right: 20px; bottom: 100px; width: calc(100% - 40px); }
+  .goal-fab-label { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .electric-particles, .mountain-current { display: none; }
+  .goal-climb-path, .goal-progress span { animation: none; stroke-dashoffset: 0; }
 }
