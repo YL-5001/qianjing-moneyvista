@@ -178,8 +178,11 @@ button { color: inherit; }
 .goals-kicker { display: inline-flex; align-items: center; min-height: 34px; padding: 0 17px; border-radius: 999px; color: #00627b; background: rgba(135,206,235,.2); font-size: 14px; font-weight: 500; }
 .goals-hero h1 { margin: 12px 0 18px; font-size: clamp(42px,4.5vw,56px); line-height: 1.08; letter-spacing: -.035em; }
 .goals-hero p { max-width: 690px; margin: 0; color: var(--muted); font-size: 19px; line-height: 1.55; }
-.goal-card-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 24px; margin-top: 52px; }
-.goal-card-shell { position: relative; min-width: 0; height: 566px; perspective: 1400px; animation: goal-rise .8s cubic-bezier(.16,1,.3,1) both; transition: transform .35s cubic-bezier(.16,1,.3,1); }
+.goal-card-grid { display: flex; gap: 24px; margin-top: 52px; padding: 8px 2px 18px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-padding-inline: 2px; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: rgba(135,206,235,.75) #e8e8ea; }
+.goal-card-grid::-webkit-scrollbar { height: 7px; }
+.goal-card-grid::-webkit-scrollbar-track { border-radius: 999px; background: #e8e8ea; }
+.goal-card-grid::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(135,206,235,.85); }
+.goal-card-shell { position: relative; flex: 0 0 calc((100% - 48px) / 3); min-width: 0; height: 566px; perspective: 1400px; scroll-snap-align: start; animation: goal-rise .8s cubic-bezier(.16,1,.3,1) both; transition: transform .35s cubic-bezier(.16,1,.3,1); }
 .goal-card-shell:hover { transform: translateY(-8px); }
 .goal-card-shell.flipped:hover { transform: translateY(-3px); }
 .goal-card-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .82s cubic-bezier(.2,.78,.23,1.18); }
@@ -236,6 +239,8 @@ button { color: inherit; }
 .goal-adjust-row .add { color: white; background: var(--sky); box-shadow: 0 7px 18px rgba(135,206,235,.34); }
 .goal-adjust-panel p { min-height: 17px; margin: 7px 0 0; color: var(--muted); font-size: 11px; transition: color .2s, transform .2s; }
 .goal-adjust-panel p.visible { color: #08708b; font-weight: 700; transform: translateX(3px); }
+.goal-carousel-hint { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin: 2px 3px 0; color: var(--muted); font-size: 12px; }
+.goal-carousel-hint .material-symbols-outlined { color: #08708b; font-size: 18px; }
 .completed-goals { margin-top: 82px; }
 .completed-heading { display: flex; align-items: center; gap: 30px; margin-bottom: 30px; }
 .completed-heading h2 { margin: 0; font-size: 36px; line-height: 1.2; letter-spacing: -.025em; }
@@ -292,8 +297,9 @@ button { color: inherit; }
   .goals-hero { text-align: center; }
   .goals-hero h1 { font-size: 38px; }
   .goals-hero p { font-size: 17px; }
-  .goal-card-grid, .completed-grid { grid-template-columns: 1fr; }
-  .goal-card-shell { height: 548px; }
+  .completed-grid { grid-template-columns: 1fr; }
+  .goal-card-grid { gap: 16px; margin-inline: -2px; }
+  .goal-card-shell { flex-basis: 100%; height: 548px; }
   .goal-card-face { padding: 24px; }
   .goal-curve { height: 112px; }
   .completed-goals { margin-top: 64px; }

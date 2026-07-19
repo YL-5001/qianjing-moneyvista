@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { SiteHeader } from "../components/SiteHeader";
 
 type GoalData = {
@@ -29,6 +29,21 @@ const completedGoals = [
 
 const formatCurrency = (value: number) => `¥ ${new Intl.NumberFormat("zh-CN").format(value)}`;
 const getProgress = (goal: GoalData) => Math.min(100, Math.round((goal.current / Math.max(goal.target, 1)) * 100));
+const matchGoalIcon = (title: string) => {
+  const rules: Array<[RegExp, string]> = [
+    [/(房|住宅|公寓|装修|置业)/, "home"],
+    [/(车|汽车|摩托|交通)/, "directions_car"],
+    [/(旅行|旅游|环球|度假|出国)/, "public"],
+    [/(教育|学习|学校|留学|课程)/, "school"],
+    [/(医疗|健康|看病|手术|保险)/, "health_and_safety"],
+    [/(退休|养老|晚年)/, "account_balance_wallet"],
+    [/(创业|事业|公司|生意)/, "rocket_launch"],
+    [/(婚礼|结婚|婚姻)/, "favorite"],
+    [/(电脑|手机|数码|设备)/, "devices"],
+    [/(应急|备用|储备)/, "savings"],
+  ];
+  return rules.find(([pattern]) => pattern.test(title))?.[1] ?? "flag";
+};
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState(INITIAL_GOALS);
@@ -37,6 +52,7 @@ export default function GoalsPage() {
   const [feedback, setFeedback] = useState<Record<string, string>>({});
   const [formOpen, setFormOpen] = useState(false);
   const [created, setCreated] = useState(false);
+  const goalListRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const closeOnEscape = (event: globalThis.KeyboardEvent) => {
@@ -57,7 +73,9 @@ export default function GoalsPage() {
   };
 
   const updateGoal = (goalId: string, updates: Partial<Pick<GoalData, "title" | "target">>) => {
-    setGoals((currentGoals) => currentGoals.map((goal) => goal.id === goalId ? { ...goal, ...updates } : goal));
+    setGoals((currentGoals) => currentGoals.map((goal) => goal.id === goalId
+      ? { ...goal, ...updates, ...(updates.title ? { icon: matchGoalIcon(updates.title) } : {}) }
+      : goal));
   };
 
   const adjustCurrent = (goalId: string, direction: 1 | -1) => {
@@ -81,7 +99,28 @@ export default function GoalsPage() {
   const createGoal = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
+    const values = new FormData(form);
+    const title = String(values.get("goal-name") ?? "").trim();
+    const target = Number(values.get("goal-target"));
+    const current = Math.max(0, Number(values.get("goal-initial")) || 0);
+    if (!title || !Number.isFinite(target) || target <= 0) return;
+
+    const newGoal: GoalData = {
+      id: `goal-${Date.now()}`,
+      title,
+      subtitle: `为「${title}」稳步积累`,
+      icon: matchGoalIcon(title),
+      status: "新目标",
+      current,
+      target,
+      estimate: "待规划",
+      path: "M0 55 Q48 51 92 38 T155 18 T200 8",
+    };
+
+    setGoals((currentGoals) => [...currentGoals, newGoal]);
+    setFlippedGoal(null);
     setCreated(true);
+    window.setTimeout(() => goalListRef.current?.scrollTo({ left: goalListRef.current.scrollWidth, behavior: "smooth" }), 80);
     window.setTimeout(() => {
       setFormOpen(false);
       setCreated(false);
@@ -104,7 +143,7 @@ export default function GoalsPage() {
             <p>每一次储蓄都是向上的攀登。在这里，我们将复杂的财务规划转化为清晰的登顶路径，助您稳步抵达梦想的高度。</p>
           </header>
 
-          <section className="goal-card-grid" aria-label="进行中的财富目标">
+          <section ref={goalListRef} className="goal-card-grid" aria-label="进行中的财富目标">
             {goals.map((goal, index) => {
               const progress = getProgress(goal);
               const isFlipped = flippedGoal === goal.id;
@@ -192,6 +231,9 @@ export default function GoalsPage() {
               );
             })}
           </section>
+          {goals.length > 3 && (
+            <p className="goal-carousel-hint"><span className="material-symbols-outlined" aria-hidden="true">swipe</span> 左右滑动查看全部 {goals.length} 个目标</p>
+          )}
 
           <section className="completed-goals" aria-labelledby="completed-title">
             <div className="completed-heading"><h2 id="completed-title">已达巅峰</h2><span aria-hidden="true" /></div>
