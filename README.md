@@ -1,98 +1,59 @@
-# vinext-starter
+# 钱景 MoneyVista
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+> 攀登财富之巅——清晰掌控储蓄进度、投资收益与财富目标。  
+> Climb toward financial freedom with a clear view of savings progress, investment returns, and wealth goals.
 
-## Prerequisites
+![钱景 MoneyVista 设计预览](stitch/screen.png)
 
-- Node.js `>=22.13.0`
+## 项目介绍 / About
 
-## Quick Start
+钱景是一款 Apple 风格的个人财富仪表盘，以“攀登财富之巅”为核心视觉概念，通过简洁、通透的界面呈现资产增长、储蓄进度和财务目标。
+
+MoneyVista is an Apple-inspired personal wealth dashboard built around the idea of climbing toward a financial summit. Its clean, glass-like interface makes savings progress, portfolio growth, and financial goals easy to understand at a glance.
+
+在线体验 / Live demo: [qianjing-moneyvista.zanez001.chatgpt.site](https://qianjing-moneyvista.zanez001.chatgpt.site)
+
+## 功能特色 / Features
+
+- 财富目标进度与关键数据概览 / Wealth-goal progress and key metrics
+- 储蓄、投资收益和预计达成时间展示 / Savings, investment returns, and estimated completion date
+- “今日攒钱”快捷录入弹窗 / Quick “Save Today” entry modal
+- 玻璃拟态卡片与财富曲线动画 / Glassmorphism cards and animated wealth curve
+- 桌面端与移动端响应式布局 / Responsive desktop and mobile layouts
+- 键盘操作与减少动态效果支持 / Keyboard interaction and reduced-motion support
+
+## 技术栈 / Tech Stack
+
+- React 19
+- TypeScript
+- vinext / Next.js-compatible App Router
+- Tailwind CSS 4
+- Vite 8
+- Cloudflare Workers-compatible deployment
+
+## 本地运行 / Local Development
+
+需要 Node.js `>=22.13.0`。  
+Requires Node.js `>=22.13.0`.
 
 ```bash
 npm install
 npm run dev
+```
+
+打开 / Open: [http://localhost:3000](http://localhost:3000)
+
+## 构建 / Build
+
+```bash
 npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+## 设计来源 / Design Source
 
-## Included Shape
+页面严格参考 `stitch/` 目录中的设计规范、HTML 原型和视觉截图实现。  
+The implementation follows the design specification, HTML prototype, and visual reference stored in `stitch/`.
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+## 许可 / License
 
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+本项目暂未指定开源许可证。 / No open-source license has been specified yet.
