@@ -198,10 +198,18 @@ button { color: inherit; }
 .goal-status.muted { color: var(--muted); background: #ececee; }
 .goal-card-face h2 { margin: 0 0 5px; font-size: 24px; line-height: 1.3; }
 .goal-subtitle { margin: 0; color: var(--muted); font-size: 14px; }
-.goal-curve { height: 130px; margin: 20px 0 0; }
-.goal-curve svg { width: 100%; height: 100%; overflow: visible; }
-.goal-climb-path { fill: none; stroke: var(--sky); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 200; stroke-dashoffset: 200; animation: goal-draw 1.35s .35s cubic-bezier(.4,0,.2,1) forwards; }
-.goal-curve circle { fill: #08708b; }
+.goal-curve { height: 138px; margin: 18px 0 0; }
+.goal-curve svg { width: 100%; height: 91px; overflow: visible; }
+.goal-trend-copy, .goal-trend-range { display: flex; align-items: center; justify-content: space-between; }
+.goal-trend-copy { min-height: 21px; color: var(--muted); font-size: 10px; font-weight: 600; }
+.goal-trend-copy strong { color: #08708b; font-size: 12px; }
+.goal-trend-copy strong.negative { color: #b46868; }
+.goal-trend-range { margin-top: -3px; color: rgba(110,110,115,.76); font-size: 9px; font-weight: 600; }
+.goal-trend-grid { fill: none; stroke: rgba(110,110,115,.1); stroke-width: .65; stroke-dasharray: 2 4; }
+.goal-trend-area { fill: rgba(135,206,235,.12); stroke: none; }
+.goal-climb-path { fill: none; stroke: var(--sky); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; vector-effect: non-scaling-stroke; animation: goal-draw 1.05s .18s cubic-bezier(.4,0,.2,1) forwards; }
+.goal-curve circle { fill: rgba(8,112,139,.68); stroke: rgba(255,255,255,.88); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.goal-curve circle.latest { fill: #08708b; stroke-width: 2; filter: drop-shadow(0 2px 4px rgba(8,112,139,.25)); }
 .goal-curve text { fill: #08708b; font-size: 8px; text-anchor: middle; }
 .goal-values { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
 .goal-values span { display: block; margin-bottom: 5px; color: var(--muted); font-size: 12px; font-weight: 600; }
@@ -331,7 +339,7 @@ button { color: inherit; }
   .goal-card-shell { flex-basis: 100%; height: 548px; }
   .goal-card-face { padding: 24px; }
   .goal-history-drawer { padding: 22px; }
-  .goal-curve { height: 112px; }
+  .goal-curve { height: 132px; }
   .completed-goals { margin-top: 64px; }
   .completed-heading h2 { font-size: 30px; }
   .completed-card { gap: 14px; padding: 20px; }

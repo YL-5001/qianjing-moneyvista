@@ -12,7 +12,6 @@ type GoalData = {
   current: number;
   target: number;
   estimate: string;
-  path: string;
   records: GoalRecord[];
   muted?: boolean;
 };
@@ -26,17 +25,17 @@ type GoalRecord = {
 };
 
 const INITIAL_GOALS: GoalData[] = [
-  { id: "house", title: "买房基金", subtitle: "首套住房置业计划", icon: "paid", status: "进行中", current: 650000, target: 1000000, estimate: "18个月", path: "M0 52 Q48 48 96 28 T200 8", records: [
+  { id: "house", title: "买房基金", subtitle: "首套住房置业计划", icon: "paid", status: "进行中", current: 650000, target: 1000000, estimate: "18个月", records: [
     { id: "house-3", date: "2026-07-19", amount: 5000, note: "工资结余", balance: 650000 },
     { id: "house-2", date: "2026-06-28", amount: 2000, note: "月度储蓄", balance: 645000 },
     { id: "house-1", date: "2026-06-12", amount: 3000, note: "投资收益", balance: 643000 },
   ] },
-  { id: "travel", title: "环球旅行", subtitle: "极光与热带雨林探索", icon: "public", status: "加速中", current: 164000, target: 200000, estimate: "4个月", path: "M0 55 Q42 50 82 45 T160 15 T200 5", records: [
+  { id: "travel", title: "环球旅行", subtitle: "极光与热带雨林探索", icon: "public", status: "加速中", current: 164000, target: 200000, estimate: "4个月", records: [
     { id: "travel-3", date: "2026-07-10", amount: 8000, note: "旅行专项储蓄", balance: 164000 },
     { id: "travel-2", date: "2026-06-16", amount: 4500, note: "项目奖金", balance: 156000 },
     { id: "travel-1", date: "2026-05-30", amount: 3000, note: "月度储蓄", balance: 151500 },
   ] },
-  { id: "retirement", title: "退休储备", subtitle: "悦享晚年生活保障", icon: "account_balance_wallet", status: "长跑中", current: 480000, target: 5000000, estimate: "20年", path: "M0 55 L50 52 L100 48 L150 45 L200 42", muted: true, records: [
+  { id: "retirement", title: "退休储备", subtitle: "悦享晚年生活保障", icon: "account_balance_wallet", status: "长跑中", current: 480000, target: 5000000, estimate: "20年", muted: true, records: [
     { id: "retirement-3", date: "2026-07-01", amount: 6000, note: "定期投入", balance: 480000 },
     { id: "retirement-2", date: "2026-06-01", amount: 6000, note: "定期投入", balance: 474000 },
     { id: "retirement-1", date: "2026-05-01", amount: 6000, note: "定期投入", balance: 468000 },
@@ -49,12 +48,72 @@ const completedGoals = [
 ] as const;
 
 const formatCurrency = (value: number) => `¥ ${new Intl.NumberFormat("zh-CN").format(value)}`;
+const formatCompactCurrency = (value: number) => {
+  const absolute = Math.abs(value);
+  if (absolute >= 10000) {
+    const tenThousands = absolute / 10000;
+    return `¥ ${tenThousands.toLocaleString("zh-CN", { maximumFractionDigits: tenThousands >= 10 ? 0 : 1 })}万`;
+  }
+  return formatCurrency(absolute);
+};
 const formatRecordDate = (value: string) => new Intl.DateTimeFormat("zh-CN", {
   year: "numeric",
   month: "long",
   day: "numeric",
 }).format(new Date(`${value}T12:00:00`));
 const getProgress = (goal: GoalData) => Math.min(100, Math.round((goal.current / Math.max(goal.target, 1)) * 100));
+const getGoalTrend = (goal: GoalData) => {
+  const day = 86_400_000;
+  const chronological = [...goal.records].reverse().sort((a, b) => a.date.localeCompare(b.date));
+  const daily = chronological.reduce<Array<{ date: string; balance: number; change: number }>>((result, record) => {
+    const previous = result[result.length - 1];
+    if (previous?.date === record.date) {
+      previous.balance = record.balance;
+      previous.change += record.amount;
+    } else {
+      result.push({ date: record.date, balance: record.balance, change: record.amount });
+    }
+    return result;
+  }, []);
+
+  if (daily.length < 2) {
+    const balance = daily[0]?.balance ?? goal.current;
+    return {
+      path: "M6 34 L194 34",
+      areaPath: "M6 34 L194 34 L194 62 L6 62 Z",
+      points: [{ x: 194, y: 34 }],
+      days: 0,
+      delta: 0,
+      start: balance,
+      end: balance,
+      hasTrend: false,
+    };
+  }
+
+  const samples = daily.map((item) => ({ time: new Date(`${item.date}T12:00:00`).getTime(), balance: item.balance }));
+  const firstTime = samples[0].time;
+  const lastTime = samples[samples.length - 1].time;
+  const balances = samples.map((sample) => sample.balance);
+  const minimum = Math.min(...balances);
+  const maximum = Math.max(...balances);
+  const range = Math.max(1, maximum - minimum);
+  const points = samples.map((sample) => ({
+    x: 6 + ((sample.time - firstTime) / Math.max(day, lastTime - firstTime)) * 188,
+    y: 58 - ((sample.balance - minimum) / range) * 48,
+  }));
+  const path = points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" ");
+
+  return {
+    path,
+    areaPath: `${path} L${points[points.length - 1].x.toFixed(2)} 62 L${points[0].x.toFixed(2)} 62 Z`,
+    points,
+    days: Math.max(1, Math.round((lastTime - firstTime) / day)),
+    delta: balances[balances.length - 1] - balances[0],
+    start: balances[0],
+    end: balances[balances.length - 1],
+    hasTrend: true,
+  };
+};
 const matchGoalIcon = (title: string) => {
   const rules: Array<[RegExp, string]> = [
     [/(房|住宅|公寓|装修|置业)/, "home"],
@@ -163,7 +222,6 @@ export default function GoalsPage() {
       current,
       target,
       estimate: "待规划",
-      path: "M0 55 Q48 51 92 38 T155 18 T200 8",
       records: current > 0 ? [{
         id: `record-${Date.now()}-initial`,
         date: new Date().toISOString().slice(0, 10),
@@ -203,10 +261,10 @@ export default function GoalsPage() {
           <section ref={goalListRef} className="goal-card-grid" aria-label="进行中的财富目标">
             {goals.map((goal, index) => {
               const progress = getProgress(goal);
+              const trend = getGoalTrend(goal);
               const isFlipped = flippedGoal === goal.id;
               const historyOpen = historyGoal === goal.id;
               const editTabIndex = isFlipped && !historyOpen ? 0 : -1;
-              const pathId = `goal-path-${goal.id}`;
 
               return (
                 <article className={`goal-card-shell ${isFlipped ? "flipped" : ""}`} key={goal.id} style={{ animationDelay: `${index * 0.1 + 0.08}s` }}>
@@ -227,15 +285,15 @@ export default function GoalsPage() {
                       <h2>{goal.title}</h2>
                       <p className="goal-subtitle">{goal.subtitle}</p>
 
-                      <div className="goal-curve" aria-hidden="true">
+                      <div className="goal-curve" role="img" aria-label={trend.hasTrend ? `${goal.title}最近${trend.days}天累计金额变化${formatCurrency(trend.delta)}` : `${goal.title}累计记录不足，暂未形成趋势`}>
+                        <div className="goal-trend-copy"><span>{trend.hasTrend ? `累计走势 · 近 ${trend.days} 天` : "累计走势 · 等待更多记录"}</span><strong className={trend.delta < 0 ? "negative" : ""}>{trend.hasTrend ? `${trend.delta >= 0 ? "+" : "−"}${formatCompactCurrency(trend.delta)}` : "—"}</strong></div>
                         <svg viewBox="0 0 200 65" preserveAspectRatio="none">
-                          <path id={pathId} className="goal-climb-path" d={goal.path} pathLength="200" />
-                          <circle key={`${goal.id}-${progress}`} r="4">
-                            <animateMotion dur=".55s" fill="freeze" keyPoints={`0;${progress / 100}`} keyTimes="0;1" calcMode="linear">
-                              <mpath href={`#${pathId}`} />
-                            </animateMotion>
-                          </circle>
+                          <path className="goal-trend-grid" d="M0 10 H200 M0 34 H200 M0 58 H200" />
+                          <path className="goal-trend-area" d={trend.areaPath} />
+                          <path key={`${goal.id}-${goal.records.length}-${goal.current}`} className="goal-climb-path" d={trend.path} pathLength="1" />
+                          {trend.points.map((point, pointIndex) => <circle className={pointIndex === trend.points.length - 1 ? "latest" : ""} key={`${point.x}-${point.y}-${pointIndex}`} cx={point.x} cy={point.y} r={pointIndex === trend.points.length - 1 ? 4 : 2.4} />)}
                         </svg>
+                        <div className="goal-trend-range"><span>{formatCompactCurrency(trend.start)}</span><span>{formatCompactCurrency(trend.end)}</span></div>
                       </div>
 
                       <div className="goal-values">
