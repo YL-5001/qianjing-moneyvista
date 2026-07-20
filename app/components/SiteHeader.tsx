@@ -4,7 +4,7 @@ type SiteHeaderProps = {
 
 const navItems = [
   { key: "dashboard", label: "仪表盘", href: "/#dashboard" },
-  { key: "assets", label: "资产", href: "/#assets" },
+  { key: "assets", label: "资产", href: "/assets" },
   { key: "goals", label: "目标", href: "/goals" },
   { key: "reports", label: "报告", href: "/#reports" },
 ] as const;
