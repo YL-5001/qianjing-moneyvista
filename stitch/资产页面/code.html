@@ -1,0 +1,460 @@
+<!DOCTYPE html><html lang="zh-CN" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>钱景 - 资产管理</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#5f5e60",
+                    "secondary": "#005ab7",
+                    "surface-tint": "#87ceeb",
+                    "surface-container-low": "#f3f3f5",
+                    "on-primary-container": "#005870",
+                    "inverse-surface": "#2f3132",
+                    "tertiary-fixed": "#e4e2e4",
+                    "primary": "#0c6780", // Darker skyblue for primary actions
+                    "surface-container": "#eeeef0",
+                    "surface": "#f9f9fb",
+                    "on-background": "#1a1c1d",
+                    "on-error": "#ffffff",
+                    "glass-stroke": "rgba(255, 255, 255, 0.4)",
+                    "outline": "#6f787d",
+                    "inverse-on-surface": "#f0f0f2",
+                    "on-primary-fixed": "#001f29",
+                    "error-container": "#ffdad6",
+                    "on-surface": "#1a1c1d",
+                    "on-tertiary": "#ffffff",
+                    "outline-variant": "#bfc8cd",
+                    "on-primary": "#ffffff",
+                    "surface-gray": "#F5F5F7",
+                    "primary-fixed": "#baeaff",
+                    "tertiary-container": "#c6c3c6",
+                    "primary-fixed-dim": "#89d0ed",
+                    "background-white": "#FFFFFF",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#001b3f",
+                    "surface-bright": "#f9f9fb",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#004d62",
+                    "text-primary": "#1D1D1F",
+                    "surface-container-highest": "#e2e2e4",
+                    "secondary-fixed": "#d7e2ff",
+                    "background": "#f9f9fb",
+                    "text-secondary": "#6E6E73",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#d9dadc",
+                    "on-tertiary-fixed-variant": "#474649",
+                    "on-surface-variant": "#3f484c",
+                    "surface-variant": "#e2e2e4",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#87ceeb",
+                    "on-tertiary-fixed": "#1b1b1d",
+                    "tertiary-fixed-dim": "#c8c6c8",
+                    "secondary-container": "#0372e4",
+                    "surface-container-high": "#e8e8ea",
+                    "on-tertiary-container": "#515053",
+                    "secondary-fixed-dim": "#abc7ff",
+                    "on-secondary-fixed-variant": "#00458f",
+                    "inverse-primary": "#89d0ed",
+                    "on-secondary-container": "#fefcff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.5rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-gap": "80px",
+                    "stack-md": "16px",
+                    "gutter": "24px",
+                    "stack-lg": "32px",
+                    "margin-mobile": "20px",
+                    "container-max": "1200px",
+                    "stack-sm": "8px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                    "display-lg": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["17px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "headline-lg": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-lg": ["19px", {"lineHeight": "1.5", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: #f9f9fb;
+            color: #1D1D1F;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 30px 40px rgba(0, 0, 0, 0.04);
+        }
+        .climbing-curve {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: dash 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: 0; }
+        }
+        .fab-glow {
+            box-shadow: 0 10px 20px rgba(135, 206, 235, 0.4);
+        }
+        .quadrant-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .rebalance-alert {
+            animation: slide-down 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slide-down {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl border-b border-glass-stroke shadow-sm h-16">
+<nav class="flex justify-between items-center px-margin-mobile md:px-gutter max-w-container-max mx-auto h-full">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3">
+<img alt="MoneyVista Logo" class="h-8 w-auto" src="https://lh3.googleusercontent.com/aida/AP1WRLv2OWCAemUymu3m6hka2Pb1FRriZz98I5sQJu4qGIMUa66I60Eql7VSkzkGEirHk--sZlsWcYihCn05vJovj0eMyCr8rWQiLz6MpGYjIkTjrjbiNFwLZKf8aGxahuahmSOqP5mZ3ynfB5bvmUlmBHCkjiin1Loxzbr6zWIqgYaqvv8pdLt37LZ8lcJ5tgpJ_Z8QJZc98PZ9GmKblxM7v_WICAxG8tvIHOjfK2NRxOMzitvnz5M47UlG1q2r">
+<span class="font-headline-md text-headline-md font-bold text-primary">钱景</span>
+</div>
+<div class="hidden md:flex gap-6">
+<a class="text-text-secondary hover:text-primary transition-colors font-body-md text-body-md" href="#">Dashboard</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-body-md text-body-md" href="#">Assets</a>
+<a class="text-text-secondary hover:text-primary transition-colors font-body-md text-body-md" href="#">Goals</a>
+<a class="text-text-secondary hover:text-primary transition-colors font-body-md text-body-md" href="#">Reports</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-text-secondary hover:text-primary p-2 rounded-full transition-all">notifications</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container cursor-pointer">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnvXRqXIPQTUTJYgjD1CejuUqXfNmGuH0Vc-72PaVVrYafJQqiXQRSGuG-v0fxuOPtAtukPQMtGCQRWeW9jL2r7IM6vJp_mcgMjz4hWzODPZOWtiJg9wb6cZ5cTKWFsIdn3pmu5nmT32Ia0px5Gzs8PZhy_UEBWR-B7hjMr5brG5thZO6P3dNZcpLXYC9oPaRU300v2NDa-ulEFF17swFmJdyyMnr1n2nmh3EJ-pJCiSPT01qikQGe6Sf_NocRpkBHFvNwi5hYxkmI">
+</div>
+</div>
+</nav>
+</header>
+<main class="pt-24 pb-section-gap px-margin-mobile md:px-gutter max-w-container-max mx-auto">
+<!-- Dynamic Rebalancing Notification -->
+<div class="mb-stack-lg rebalance-alert">
+<div class="glass-card bg-primary-container/10 border-primary/30 p-4 rounded-xl flex items-center justify-between transition-all duration-700 opacity-100 translate-y-0" style="transform: scale(1);"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container"><span class="material-symbols-outlined">warning</span></div><div><p class="font-label-md text-label-md text-text-primary">配置失衡预警：您的“投资”象限比重超出目标 5%</p><p class="text-text-secondary font-label-sm text-label-sm">建议通过资产再平衡将波动回归标准普尔家庭资产象限目标。</p></div></div><button class="bg-primary-container text-on-primary-container px-6 py-2 rounded-full font-label-sm text-label-sm hover:opacity-90 transition-opacity">立即优化</button></div>
+</div>
+<!-- Header Section -->
+<section class="mb-stack-lg animate-fade-in">
+<h1 class="font-headline-lg text-headline-lg text-text-primary mb-stack-sm">我的资产</h1>
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<div class="flex items-baseline gap-2">
+<span class="font-display-lg text-display-lg text-text-primary font-light">¥</span>
+<span class="font-display-lg text-display-lg text-text-primary">2,450,000</span>
+</div>
+<div class="flex items-center gap-1 text-primary font-label-md text-label-md mb-2">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span class="">较昨日 +¥12,450 (0.51%)</span>
+</div>
+</div>
+<div class="glass-card px-6 py-3 rounded-xl border-primary/20 flex flex-col items-end transition-all duration-700 opacity-100 translate-y-0">
+<span class="text-text-secondary font-label-sm text-label-sm">财富目标总进度</span>
+<div class="flex items-center gap-3">
+<span class="font-headline-md text-headline-md text-primary">45%</span>
+<div class="w-32 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-primary h-full" style="width: 45%"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Advanced Financial Model Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- S&P 4 Quadrants (md:span-7) -->
+<div class="md:col-span-7 glass-card p-stack-lg rounded-xl flex flex-col transition-all duration-700 opacity-100 translate-y-0" style="transform: scale(1);">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h3 class="font-headline-md text-headline-md">标准普尔资产象限</h3>
+<p class="text-text-secondary font-label-sm text-label-sm mt-1">S&amp;P 500 家庭财富结构分析</p>
+</div>
+<button class="material-symbols-outlined text-text-secondary hover:text-primary">info</button>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center flex-grow">
+<!-- Visualization Area -->
+<div class="relative aspect-square max-w-[300px] mx-auto w-full">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100"><circle cx="50" cy="50" fill="none" r="38" stroke="#F5F5F7" stroke-width="14" class=""></circle><circle class="transition-all duration-1000 cursor-pointer" cx="50" cy="50" fill="none" r="38" stroke="#0c6780" stroke-dasharray="238.7" stroke-dashoffset="143.2" stroke-linecap="butt" stroke-width="16" id="segment-cash"></circle><circle class="transition-all duration-1000 cursor-pointer" cx="50" cy="50" fill="none" r="38" stroke="#0372e4" stroke-dasharray="238.7" stroke-dashoffset="167.1" stroke-width="16" transform="rotate(144 50 50)" id="segment-protection"></circle><circle class="transition-all duration-1000 cursor-pointer" cx="50" cy="50" fill="none" r="38" stroke="#87ceeb" stroke-dasharray="238.7" stroke-dashoffset="191" stroke-width="16" transform="rotate(252 50 50)" id="segment-investment"></circle><circle class="transition-all duration-1000 cursor-pointer" cx="50" cy="50" fill="none" r="38" stroke="#baeaff" stroke-dasharray="238.7" stroke-dashoffset="214.8" stroke-width="16" transform="rotate(324 50 50)" id="segment-pension"></circle></svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center"><div class="bg-white/80 backdrop-blur-sm rounded-full w-24 h-24 flex flex-col items-center justify-center shadow-sm border border-white/50"><span id="chart-label" class="text-text-secondary text-[12px] font-medium uppercase tracking-wider mb-0.5 transition-all duration-200">资产配置</span><span id="chart-value" class="font-bold text-2xl text-primary transition-all duration-200">稳健</span></div></div>
+</div>
+<!-- Quadrant Info Grid -->
+<div class="quadrant-grid">
+<div class="p-3 bg-white/40 rounded-lg border border-glass-stroke">
+<p class="font-label-sm text-text-secondary">现金账户 (10%)</p>
+<div class="flex justify-between items-end mt-1">
+<span class="font-headline-md text-[18px]">¥ 245k</span>
+<span class="text-green-600 font-label-sm text-[10px]">正常</span>
+</div>
+</div>
+<div class="p-3 bg-white/40 rounded-lg border border-glass-stroke">
+<p class="font-label-sm text-text-secondary">保障账户 (20%)</p>
+<div class="flex justify-between items-end mt-1">
+<span class="font-headline-md text-[18px]">¥ 490k</span>
+<span class="text-green-600 font-label-sm text-[10px]">正常</span>
+</div>
+</div>
+<div class="p-3 bg-primary-container/10 rounded-lg border border-primary/20"><p class="font-label-sm text-primary-container">投资账户 (30%)</p><div class="flex justify-between items-end mt-1"><span class="font-headline-md text-[18px]">¥ 857k</span><span class="text-error font-label-sm text-[10px]">+5% 失衡</span></div></div>
+<div class="p-3 bg-white/40 rounded-lg border border-glass-stroke">
+<p class="font-label-sm text-text-secondary">养老账户 (40%)</p>
+<div class="flex justify-between items-end mt-1">
+<span class="font-headline-md text-[18px]">¥ 858k</span>
+<span class="text-green-600 font-label-sm text-[10px]">正常</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Account List & Cards (md:span-5) -->
+<div class="md:col-span-5 flex flex-col gap-gutter">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-md text-headline-md">账户明细</h2>
+<button class="text-primary font-label-md text-label-md hover:underline">管理</button>
+</div>
+<div class="grid grid-cols-1 gap-stack-md">
+<!-- Bank Cards -->
+<div class="glass-card p-gutter rounded-xl active:scale-95 transition-all duration-200 cursor-pointer border-l-4 border-l-primary-fixed duration-700 opacity-100 translate-y-0">
+<div class="flex justify-between items-start mb-2">
+<div class="bg-primary-container/20 p-2 rounded-lg"><span class="material-symbols-outlined text-primary-container text-xl">savings</span></div>
+<div class="w-16 h-8">
+<svg class="w-full h-full" viewBox="0 0 100 50">
+<path class="climbing-curve" d="M0 40 Q 25 35, 50 25 T 100 10" fill="none" stroke="#87ceeb" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+</div>
+</div>
+<p class="text-text-secondary font-label-md text-label-md">活期/定存 (Q1/Q2)</p>
+<h3 class="font-headline-md text-headline-md mt-1">¥ 820,000.00</h3>
+<div class="mt-2 flex items-center text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span class="">2.4% 年化</span>
+</div>
+</div>
+<!-- Stocks -->
+<div class="glass-card p-gutter rounded-xl active:scale-95 transition-all duration-200 cursor-pointer border-l-4 border-l-primary duration-700 opacity-100 translate-y-0">
+<div class="flex justify-between items-start mb-2">
+<div class="bg-primary-container/20 p-2 rounded-lg"><span class="material-symbols-outlined text-primary-container text-xl">show_chart</span></div>
+<div class="w-16 h-8">
+<svg class="w-full h-full" viewBox="0 0 100 50">
+<path class="climbing-curve" d="M0 45 Q 20 40, 40 20 T 100 5" fill="none" stroke="#87ceeb" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+</div>
+</div>
+<p class="text-text-secondary font-label-md text-label-md">高风险投资 (Q3)</p>
+<h3 class="font-headline-md text-headline-md mt-1">¥ 1,240,000.00</h3>
+<div class="mt-2 flex items-center text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span class="">12.8% 本季收益</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Middle Section: Goal Progress & Distribution Stats -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter mt-gutter">
+<!-- Goal Progress (md:span-8) -->
+<div class="md:col-span-8 glass-card p-stack-lg rounded-xl transition-all duration-700 opacity-100 translate-y-0" style="transform: scale(1);">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md">目标追踪</h3>
+<a class="text-primary font-label-md hover:underline" href="#">详情</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Goal Item 1 -->
+<div class="group cursor-pointer">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label-md text-text-primary">买房基金</span>
+<span class="font-label-md text-primary">65%</span>
+</div>
+<div class="h-12 w-full mb-2">
+<svg class="w-full h-full" viewBox="0 0 200 40">
+<path class="climbing-curve" d="M0,35 Q50,30 100,20 T200,5" fill="none" stroke="#87ceeb" stroke-linecap="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 65%"></div>
+</div>
+</div>
+<!-- Goal Item 2 -->
+<div class="group cursor-pointer">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label-md text-text-primary">退休储备</span>
+<span class="font-label-md text-primary">12%</span>
+</div>
+<div class="h-12 w-full mb-2">
+<svg class="w-full h-full" viewBox="0 0 200 40">
+<path class="climbing-curve" d="M0,38 L50,35 L100,32 L150,30" fill="none" stroke="#87ceeb" stroke-linecap="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 12%"></div>
+</div>
+</div>
+<!-- Goal Item 3 -->
+<div class="group cursor-pointer">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label-md text-text-primary">环球旅行</span>
+<span class="font-label-md text-primary">82%</span>
+</div>
+<div class="h-12 w-full mb-2">
+<svg class="w-full h-full" viewBox="0 0 200 40">
+<path class="climbing-curve" d="M0,35 Q40,30 80,25 T160,10" fill="none" stroke="#87ceeb" stroke-linecap="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 82%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Distribution Stats (md:span-4) -->
+<div class="md:col-span-4 glass-card p-stack-lg rounded-xl flex flex-col justify-center transition-all duration-700 opacity-100 translate-y-0">
+<h4 class="font-label-md text-text-secondary mb-4">资产流动性分析</h4>
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<span class="text-body-md text-text-primary">高流动性</span>
+<span class="font-label-md">15%</span>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full">
+<div class="bg-primary-fixed h-full rounded-full" style="width: 15%"></div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-body-md text-text-primary">中长周期</span>
+<span class="font-label-md">85%</span>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full">
+<div class="bg-primary h-full rounded-full" style="width: 85%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Activity -->
+<section class="mt-stack-lg">
+<div class="flex items-center justify-between mb-stack-lg">
+<h2 class="font-headline-md text-headline-md">近期账单</h2>
+<div class="flex gap-2">
+<button class="bg-white border border-outline-variant px-4 py-1.5 rounded-full font-label-sm text-label-sm hover:bg-surface-container-low transition-colors">全部</button>
+<button class="bg-white border border-outline-variant px-4 py-1.5 rounded-full font-label-sm text-label-sm hover:bg-surface-container-low transition-colors">本月</button>
+</div>
+</div>
+<div class="glass-card rounded-xl overflow-hidden transition-all duration-700 opacity-100 translate-y-0" style="transform: scale(1);">
+<div class="divide-y divide-glass-stroke">
+<!-- Item 1 -->
+<div class="flex items-center justify-between p-gutter hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center text-primary text-primary-container">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-text-primary">标普500指数基金 - 分红 (Q3)</p>
+<p class="text-text-secondary font-label-sm text-label-sm">2024-05-24 14:30</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label-md text-label-md text-primary">+ ¥ 1,240.00</p>
+<p class="text-text-secondary font-label-sm text-label-sm">已存入余额</p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center justify-between p-gutter hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-gray flex items-center justify-center text-text-secondary">
+<span class="material-symbols-outlined">sync_alt</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-text-primary">招商银行卡 - 资金转移</p>
+<p class="text-text-secondary font-label-sm text-label-sm">2024-05-23 09:15</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label-md text-label-md text-text-primary">- ¥ 50,000.00</p>
+<p class="text-text-secondary font-label-sm text-label-sm">转至 高风险投资</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-bright dark:bg-surface-dim w-full py-stack-lg border-t border-surface-container-low mt-section-gap">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-gutter max-w-container-max mx-auto gap-4">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md font-semibold text-text-primary">钱景 MoneyVista</span>
+</div>
+<div class="flex gap-6">
+<a class="text-text-secondary font-label-sm text-label-sm hover:text-primary transition-colors" href="#">隐私权政策</a>
+<a class="text-text-secondary font-label-sm text-label-sm hover:text-primary transition-colors" href="#">服务条款</a>
+<a class="text-text-secondary font-label-sm text-label-sm hover:text-primary transition-colors" href="#">帮助中心</a>
+</div>
+<p class="text-text-secondary font-label-sm text-label-sm">© 2024 MoneyVista. 版权所有.</p>
+</div>
+</footer>
+<!-- Floating Action Button -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary-container text-on-primary-container rounded-full flex items-center justify-center fab-glow active:scale-90 transition-transform z-40">
+<span class="material-symbols-outlined text-2xl">add</span>
+</button>
+<script>
+    // Micro-interaction for clicking animation on cards
+    document.querySelectorAll('.glass-card').forEach(card => {
+        card.addEventListener('mousedown', () => {
+            card.style.transform = 'scale(0.98)';
+        });
+        card.addEventListener('mouseup', () => {
+            card.style.transform = 'scale(1)';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'scale(1)';
+        });
+    });
+
+    // Simple visibility observer for scroll animations
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('opacity-100', 'translate-y-0');
+                entry.target.classList.remove('opacity-0', 'translate-y-4');
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.glass-card').forEach(card => {
+        card.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-4');
+        observer.observe(card);
+    });
+</script>
+
+
+<script>const labelEl = document.getElementById('chart-label'); const valueEl = document.getElementById('chart-value'); const originalLabel = '资产配置'; const originalValue = '稳健'; const data = { 'segment-cash': { label: '现金账户', value: '10%' }, 'segment-protection': { label: '保障账户', value: '20%' }, 'segment-investment': { label: '投资账户', value: '30%' }, 'segment-pension': { label: '养老账户', value: '40%' } }; document.querySelectorAll('svg circle[id]').forEach(circle => { circle.addEventListener('mouseenter', () => { const info = data[circle.id]; labelEl.style.opacity = '0'; valueEl.style.opacity = '0'; setTimeout(() => { labelEl.textContent = info.label; valueEl.textContent = info.value; labelEl.style.opacity = '1'; valueEl.style.opacity = '1'; }, 150); circle.style.strokeWidth = '20'; }); circle.addEventListener('mouseleave', () => { labelEl.style.opacity = '0'; valueEl.style.opacity = '0'; setTimeout(() => { labelEl.textContent = originalLabel; valueEl.textContent = originalValue; labelEl.style.opacity = '1'; valueEl.style.opacity = '1'; }, 150); circle.style.strokeWidth = '16'; }); });</script></body></html>
