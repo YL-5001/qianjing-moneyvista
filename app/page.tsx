@@ -1,7 +1,11 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { useGSAP } from "@gsap/react";
+import { gsap } from "gsap";
 import { SiteHeader } from "./components/SiteHeader";
+
+gsap.registerPlugin(useGSAP);
 
 const quickTags = [
   ["餐饮", "餐饮支出"],
@@ -24,11 +28,30 @@ const ELECTRIC_PARTICLES = [
 ] as const;
 
 export default function Home() {
+  const pageRef = useRef<HTMLDivElement>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [amount, setAmount] = useState("");
   const [remark, setRemark] = useState("");
   const amountRef = useRef<HTMLInputElement>(null);
+
+  useGSAP(() => {
+    const media = gsap.matchMedia();
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
+      timeline
+        .addLabel("hero", 0)
+        .from(".home-hero-title", { y: 34, autoAlpha: 0, duration: 0.82 }, "hero")
+        .from(".home-hero-copy", { y: 20, autoAlpha: 0, duration: 0.62 }, "hero+=0.24")
+        .from(".home-hero-altitude", { y: 14, autoAlpha: 0, duration: 0.5 }, "hero+=0.42")
+        .from(".home-insight-heading, .home-progress-copy", { y: 18, autoAlpha: 0, duration: 0.52, stagger: 0.1 }, "hero+=0.62")
+        .from(".home-metric", { y: 18, autoAlpha: 0, scale: 0.975, duration: 0.54, stagger: 0.1 }, "hero+=0.76")
+        .from(".home-strategy-title, .home-strategy-copy, .home-strategy-action", { y: 18, autoAlpha: 0, duration: 0.5, stagger: 0.1 }, "hero+=0.86");
+
+      return () => timeline.kill();
+    });
+    return () => media.revert();
+  }, { scope: pageRef });
 
   useEffect(() => {
     if (modalOpen) {
@@ -60,7 +83,7 @@ export default function Home() {
   };
 
   return (
-    <>
+    <div ref={pageRef}>
       <SiteHeader active="dashboard" />
 
       <main id="top" className="dashboard-page">
@@ -117,36 +140,36 @@ export default function Home() {
 
         <div className="page-shell">
           <section className="hero" aria-labelledby="hero-title">
-            <h1 id="hero-title">攀登财富之巅</h1>
-            <p>每一次储蓄都是在向您的财务巅峰迈进一步。</p>
-            <p className="altitude">当前海拔： <strong>¥450,000</strong> <span>/ 目标： ¥1,000,000</span></p>
+            <h1 id="hero-title" className="home-hero-title">攀登财富之巅</h1>
+            <p className="home-hero-copy">每一次储蓄都是在向您的财务巅峰迈进一步。</p>
+            <p className="altitude home-hero-altitude">当前海拔： <strong>¥450,000</strong> <span>/ 目标： ¥1,000,000</span></p>
           </section>
 
           <section id="dashboard" className="dashboard-grid" aria-label="财富仪表盘">
             <article className="insight-card glass-card">
               <div className="card-heading">
-                <div className="heading-title">
+                <div className="heading-title home-insight-heading">
                   <span className="metric-icon material-symbols-outlined" aria-hidden="true">monitoring</span>
                   <h2>增长洞察</h2>
                 </div>
-                <div className="progress-copy">
+                <div className="progress-copy home-progress-copy">
                   <span>进度</span>
                   <strong>{WEALTH_PROGRESS}%</strong>
                 </div>
               </div>
 
               <div className="metrics">
-                <div className="metric-tile">
+                <div className="metric-tile home-metric">
                   <span className="metric-label">本月结余</span>
                   <strong>+¥12,400</strong>
                   <span className="metric-detail positive"><span aria-hidden="true">↗</span> 12% 同比</span>
                 </div>
-                <div className="metric-tile">
+                <div className="metric-tile home-metric">
                   <span className="metric-label">投资收益</span>
                   <strong>¥4,820</strong>
                   <span className="metric-detail blue">年化 8.4%</span>
                 </div>
-                <div className="metric-tile">
+                <div className="metric-tile home-metric">
                   <span className="metric-label">预计登顶</span>
                   <strong>14个月</strong>
                   <span className="metric-detail">按当前速度</span>
@@ -155,12 +178,12 @@ export default function Home() {
             </article>
 
             <aside className="strategy-card">
-              <div className="strategy-title">
+              <div className="strategy-title home-strategy-title">
                 <span className="material-symbols-outlined" aria-hidden="true">tips_and_updates</span>
                 <h2>攀登策略</h2>
               </div>
-              <p>目前的攀登趋势非常稳健。如果每月能额外存入 <strong>¥200</strong>，您的财务顶峰将提早 12 天到达。</p>
-              <button type="button">查看详细报告</button>
+              <p className="home-strategy-copy">目前的攀登趋势非常稳健。如果每月能额外存入 <strong>¥200</strong>，您的财务顶峰将提早 12 天到达。</p>
+              <button className="home-strategy-action" type="button">查看详细报告</button>
             </aside>
           </section>
         </div>
@@ -209,6 +232,6 @@ export default function Home() {
           </form>
         </section>
       </div>
-    </>
+    </div>
   );
 }
