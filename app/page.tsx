@@ -29,13 +29,17 @@ const ELECTRIC_PARTICLES = [
 
 export default function Home() {
   const pageRef = useRef<HTMLDivElement>(null);
+  const strategyInnerRef = useRef<HTMLDivElement>(null);
+  const strategyFlippedRef = useRef(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [amount, setAmount] = useState("");
   const [remark, setRemark] = useState("");
+  const [strategyFlipped, setStrategyFlipped] = useState(false);
+  const [steadyAllocation, setSteadyAllocation] = useState(60);
   const amountRef = useRef<HTMLInputElement>(null);
 
-  useGSAP(() => {
+  const { contextSafe } = useGSAP(() => {
     const media = gsap.matchMedia();
     media.add("(prefers-reduced-motion: no-preference)", () => {
       const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
@@ -52,6 +56,24 @@ export default function Home() {
     });
     return () => media.revert();
   }, { scope: pageRef });
+
+  const flipStrategy = contextSafe(() => {
+    const nextFlipped = !strategyFlippedRef.current;
+    strategyFlippedRef.current = nextFlipped;
+    setStrategyFlipped(nextFlipped);
+
+    gsap.killTweensOf(strategyInnerRef.current);
+    gsap.to(strategyInnerRef.current, {
+      rotationX: nextFlipped ? 180 : 0,
+      duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 0.84,
+      ease: "back.inOut(1.28)",
+      overwrite: "auto",
+    });
+  });
+
+  const updateAllocation = (account: "steady" | "wealth", value: number) => {
+    setSteadyAllocation(account === "steady" ? value : 100 - value);
+  };
 
   useEffect(() => {
     if (modalOpen) {
@@ -178,12 +200,32 @@ export default function Home() {
             </article>
 
             <aside className="strategy-card">
-              <div className="strategy-title home-strategy-title">
-                <span className="material-symbols-outlined" aria-hidden="true">tips_and_updates</span>
-                <h2>攀登策略</h2>
+              <div ref={strategyInnerRef} className="strategy-card-inner">
+                <section className="strategy-card-face strategy-card-front" role="button" tabIndex={strategyFlipped ? -1 : 0} aria-label="打开攀登策略设置" onClick={flipStrategy} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); flipStrategy(); } }}>
+                  <div className="strategy-title home-strategy-title">
+                    <span className="material-symbols-outlined" aria-hidden="true">tips_and_updates</span>
+                    <h2>攀登策略</h2>
+                  </div>
+                  <p className="home-strategy-copy">目前的攀登趋势非常稳健。如果每月能额外存入 <strong>¥200</strong>，您的财务顶峰将提早 12 天到达。</p>
+                  <span className="strategy-card-action home-strategy-action">点击调整策略 <span className="material-symbols-outlined" aria-hidden="true">flip</span></span>
+                </section>
+
+                <section className="strategy-card-face strategy-card-back" aria-hidden={!strategyFlipped}>
+                  <div className="strategy-settings-heading">
+                    <div><span>资产配置</span><h2>攀登策略设置</h2></div>
+                    <button type="button" onClick={flipStrategy} tabIndex={strategyFlipped ? 0 : -1} aria-label="返回攀登策略"><span className="material-symbols-outlined" aria-hidden="true">close</span></button>
+                  </div>
+                  <div className="allocation-control">
+                    <div><span>稳健账户</span><strong>{steadyAllocation}%</strong></div>
+                    <input type="range" min="0" max="100" value={steadyAllocation} onChange={(event) => updateAllocation("steady", Number(event.target.value))} tabIndex={strategyFlipped ? 0 : -1} aria-label="稳健账户配置比例" />
+                  </div>
+                  <div className="allocation-control wealth">
+                    <div><span>理财账户</span><strong>{100 - steadyAllocation}%</strong></div>
+                    <input type="range" min="0" max="100" value={100 - steadyAllocation} onChange={(event) => updateAllocation("wealth", Number(event.target.value))} tabIndex={strategyFlipped ? 0 : -1} aria-label="理财账户配置比例" />
+                  </div>
+                  <p className="allocation-note"><span className="material-symbols-outlined" aria-hidden="true">sync</span> 两个账户自动保持 100% 配置</p>
+                </section>
               </div>
-              <p className="home-strategy-copy">目前的攀登趋势非常稳健。如果每月能额外存入 <strong>¥200</strong>，您的财务顶峰将提早 12 天到达。</p>
-              <button className="home-strategy-action" type="button">查看详细报告</button>
             </aside>
           </section>
         </div>
