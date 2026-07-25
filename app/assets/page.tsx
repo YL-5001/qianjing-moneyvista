@@ -1,8 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { useGSAP } from "@gsap/react";
+import { gsap } from "gsap";
 import { SiteHeader } from "../components/SiteHeader";
 import { financeRequest, type FinanceData } from "../lib/finance";
+
+gsap.registerPlugin(useGSAP);
 
 type Account = {
   id: string;
@@ -41,6 +45,9 @@ const bills = [
 const formatCurrency = (value: number) => `¥ ${new Intl.NumberFormat("zh-CN", { minimumFractionDigits: 2 }).format(value)}`;
 
 export default function AssetsPage() {
+  const pageRef = useRef<HTMLDivElement>(null);
+  const accountFlipRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const flippedAccountRef = useRef<string | null>(null);
   const [activeQuadrant, setActiveQuadrant] = useState<string | null>(null);
   const [optimized, setOptimized] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>(INITIAL_ACCOUNTS);
@@ -48,10 +55,16 @@ export default function AssetsPage() {
   const [created, setCreated] = useState(false);
   const [billFilter, setBillFilter] = useState<"all" | "month">("all");
   const [finance, setFinance] = useState<FinanceData | null>(null);
+  const [flippedAccount, setFlippedAccount] = useState<string | null>(null);
+  const [accountDrafts, setAccountDrafts] = useState<Record<string, { name: string; amount: string }>>({});
+  const [deleteCandidate, setDeleteCandidate] = useState<Account | null>(null);
+  const [accountError, setAccountError] = useState("");
+
+  const { contextSafe } = useGSAP(() => undefined, { scope: pageRef });
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setFormOpen(false);
+      if (event.key === "Escape") { setFormOpen(false); setDeleteCandidate(null); }
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
@@ -81,8 +94,43 @@ export default function AssetsPage() {
     } catch { setCreated(false); }
   };
 
+  const flipAccount = contextSafe((account: Account, open: boolean) => {
+    const node = accountFlipRefs.current[account.id];
+    if (!node) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    gsap.killTweensOf(node);
+    gsap.to(node, { rotationX: open ? 180 : 0, duration: reduceMotion ? 0 : 0.82, ease: "back.inOut(1.22)", overwrite: "auto" });
+    flippedAccountRef.current = open ? account.id : null;
+    setFlippedAccount(open ? account.id : null);
+    setAccountError("");
+    if (open) setAccountDrafts((current) => ({ ...current, [account.id]: current[account.id] ?? { name: account.name, amount: String(account.amount) } }));
+  });
+
+  const handleCardKeyboard = (event: KeyboardEvent<HTMLElement>, account: Account) => {
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); flipAccount(account, true); }
+  };
+
+  const saveAccount = async (event: FormEvent<HTMLFormElement>, account: Account) => {
+    event.preventDefault();
+    const draft = accountDrafts[account.id] ?? { name: account.name, amount: String(account.amount) };
+    const amount = Number(draft.amount);
+    if (!draft.name.trim() || !Number.isFinite(amount) || amount < 0) { setAccountError("请填写账户名称和有效金额"); return; }
+    try {
+      const data = await financeRequest<FinanceData>({ action: "updateAccount", id: account.id, name: draft.name, amount });
+      setFinance(data); setAccounts(data.accounts); flipAccount(account, false);
+    } catch (cause) { setAccountError(cause instanceof Error ? cause.message : "保存失败"); }
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (!deleteCandidate) return;
+    try {
+      const data = await financeRequest<FinanceData>({ action: "deleteAccount", id: deleteCandidate.id });
+      setFinance(data); setAccounts(data.accounts); setDeleteCandidate(null); setFlippedAccount(null); flippedAccountRef.current = null;
+    } catch (cause) { setAccountError(cause instanceof Error ? cause.message : "删除失败"); setDeleteCandidate(null); }
+  };
+
   return (
-    <>
+    <div ref={pageRef}>
       <SiteHeader active="assets" />
 
       <main className="assets-page">
@@ -154,17 +202,23 @@ export default function AssetsPage() {
             </article>
 
             <section className="accounts-column" aria-labelledby="accounts-title">
-              <div className="accounts-heading"><h2 id="accounts-title">账户明细</h2><button type="button" onClick={() => setFormOpen(true)}>管理</button></div>
+              <div className="accounts-heading"><h2 id="accounts-title">账户明细</h2></div>
               <div className="account-list">
                 {accounts.map((account) => (
-                  <article className={`account-card ${account.accent}`} key={account.id}>
-                    <div className="account-card-top">
-                      <span className="account-icon material-symbols-outlined" aria-hidden="true">{account.icon}</span>
-                      <svg viewBox="0 0 100 50" aria-hidden="true"><path d={account.path} /></svg>
+                  <article className={`account-card-shell ${account.accent} ${flippedAccount === account.id ? "flipped" : ""}`} key={account.id}>
+                    <div className="account-card-inner" ref={(node) => { accountFlipRefs.current[account.id] = node; }}>
+                      <section className="account-card account-card-front" role="button" tabIndex={flippedAccount === account.id ? -1 : 0} aria-label={`编辑${account.name}`} onClick={() => flipAccount(account, true)} onKeyDown={(event) => handleCardKeyboard(event, account)}>
+                        <div className="account-card-top"><span className="account-icon material-symbols-outlined" aria-hidden="true">{account.icon}</span><svg viewBox="0 0 100 50" aria-hidden="true"><path d={account.path} /></svg></div>
+                        <p>{account.name} ({account.quadrant})</p><h3>{formatCurrency(account.amount)}</h3><span className="account-yield"><span className="material-symbols-outlined" aria-hidden="true">arrow_upward</span>{account.performance}</span><span className="account-edit-hint"><span className="material-symbols-outlined" aria-hidden="true">edit</span> 点击编辑</span>
+                      </section>
+                      <form className="account-card account-card-back" onSubmit={(event) => saveAccount(event, account)} aria-hidden={flippedAccount !== account.id}>
+                        <div className="account-edit-heading"><div><span>账户设置</span><strong>编辑账户</strong></div><button type="button" onClick={() => flipAccount(account, false)} tabIndex={flippedAccount === account.id ? 0 : -1} aria-label={`关闭${account.name}编辑`}><span className="material-symbols-outlined" aria-hidden="true">close</span></button></div>
+                        <label htmlFor={`account-name-${account.id}`}>账户名称</label><input id={`account-name-${account.id}`} value={accountDrafts[account.id]?.name ?? account.name} onChange={(event) => setAccountDrafts((current) => ({ ...current, [account.id]: { name: event.target.value, amount: current[account.id]?.amount ?? String(account.amount) } }))} tabIndex={flippedAccount === account.id ? 0 : -1} />
+                        <label htmlFor={`account-amount-${account.id}`}>当前金额 (¥)</label><input id={`account-amount-${account.id}`} type="number" min="0" step="0.01" value={accountDrafts[account.id]?.amount ?? String(account.amount)} onChange={(event) => setAccountDrafts((current) => ({ ...current, [account.id]: { name: current[account.id]?.name ?? account.name, amount: event.target.value } }))} tabIndex={flippedAccount === account.id ? 0 : -1} />
+                        {accountError && flippedAccount === account.id && <p className="account-edit-error" role="status">{accountError}</p>}
+                        <div className="account-edit-actions"><button className="account-delete" type="button" onClick={() => setDeleteCandidate(account)} tabIndex={flippedAccount === account.id ? 0 : -1}><span className="material-symbols-outlined" aria-hidden="true">delete</span>删除</button><button className="account-save" type="submit" tabIndex={flippedAccount === account.id ? 0 : -1}>保存</button></div>
+                      </form>
                     </div>
-                    <p>{account.name} ({account.quadrant})</p>
-                    <h3>{formatCurrency(account.amount)}</h3>
-                    <span className="account-yield"><span className="material-symbols-outlined" aria-hidden="true">arrow_upward</span>{account.performance}</span>
                   </article>
                 ))}
               </div>
@@ -217,6 +271,13 @@ export default function AssetsPage() {
       </section>
 
       <button className={`fab asset-fab ${formOpen ? "active" : ""}`} type="button" onClick={() => setFormOpen((open) => !open)} aria-label={formOpen ? "关闭添加资产表单" : "添加资产"}><span aria-hidden="true">＋</span></button>
-    </>
+      <div className={`account-delete-dialog ${deleteCandidate ? "open" : ""}`} aria-hidden={!deleteCandidate}>
+        <button className="account-delete-backdrop" type="button" onClick={() => setDeleteCandidate(null)} tabIndex={deleteCandidate ? 0 : -1} aria-label="取消删除账户" />
+        <section role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
+          <span className="material-symbols-outlined" aria-hidden="true">warning</span><h2 id="delete-account-title">确认删除账户？</h2><p>“{deleteCandidate?.name}”及其当前金额将被永久删除，此操作无法撤销。</p>
+          <div><button type="button" onClick={() => setDeleteCandidate(null)} tabIndex={deleteCandidate ? 0 : -1}>取消</button><button type="button" onClick={confirmDeleteAccount} tabIndex={deleteCandidate ? 0 : -1}>确认删除</button></div>
+        </section>
+      </div>
+    </div>
   );
 }

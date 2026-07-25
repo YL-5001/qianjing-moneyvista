@@ -118,6 +118,21 @@ export async function createAccount(input: { name: string; amount: number; quadr
   return readFinanceData(db);
 }
 
+export async function updateAccount(idValue: string, input: { name: string; amount: number }) {
+  const db = await getDb(); await ensureDatabase(db);
+  if (!input.name.trim() || !Number.isFinite(input.amount) || input.amount < 0) throw new Error("请填写账户名称和有效金额");
+  const result = await db.prepare("UPDATE asset_accounts SET name = ?, amount = ?, updated_at = ? WHERE id = ?").bind(input.name.trim(), input.amount, now(), idValue).run();
+  if (!result.meta.changes) throw new Error("账户不存在");
+  return readFinanceData(db);
+}
+
+export async function deleteAccount(idValue: string) {
+  const db = await getDb(); await ensureDatabase(db);
+  const result = await db.prepare("DELETE FROM asset_accounts WHERE id = ?").bind(idValue).run();
+  if (!result.meta.changes) throw new Error("账户不存在");
+  return readFinanceData(db);
+}
+
 export async function saveSavings(input: { amount: number; remark: string }) {
   const db = await getDb(); await ensureDatabase(db);
   if (!Number.isFinite(input.amount) || input.amount <= 0) throw new Error("请输入有效金额");
