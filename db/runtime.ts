@@ -118,10 +118,11 @@ export async function createAccount(input: { name: string; amount: number; quadr
   return readFinanceData(db);
 }
 
-export async function updateAccount(idValue: string, input: { name: string; amount: number }) {
+export async function updateAccount(idValue: string, input: { name: string; amount: number; quadrant: string }) {
   const db = await getDb(); await ensureDatabase(db);
   if (!input.name.trim() || !Number.isFinite(input.amount) || input.amount < 0) throw new Error("请填写账户名称和有效金额");
-  const result = await db.prepare("UPDATE asset_accounts SET name = ?, amount = ?, updated_at = ? WHERE id = ?").bind(input.name.trim(), input.amount, now(), idValue).run();
+  if (!input.quadrant.trim()) throw new Error("请选择所属资产象限");
+  const result = await db.prepare("UPDATE asset_accounts SET name = ?, amount = ?, quadrant = ?, updated_at = ? WHERE id = ?").bind(input.name.trim(), input.amount, input.quadrant, now(), idValue).run();
   if (!result.meta.changes) throw new Error("账户不存在");
   return readFinanceData(db);
 }

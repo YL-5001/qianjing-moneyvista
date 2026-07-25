@@ -24,12 +24,20 @@ const INITIAL_ACCOUNTS: Account[] = [
   { id: "investment", name: "高风险投资", quadrant: "Q3", amount: 1240000, performance: "12.8% 本季收益", icon: "show_chart", accent: "deep", path: "M0 45 Q20 40 40 20 T100 5" },
 ];
 
-const quadrants = [
-  { id: "cash", label: "现金账户", ratio: "10%", amount: "¥ 245k", status: "正常", color: "#0c6780", offset: 143.2, rotation: 0 },
-  { id: "protection", label: "保障账户", ratio: "20%", amount: "¥ 490k", status: "正常", color: "#0372e4", offset: 167.1, rotation: 144 },
-  { id: "investment", label: "投资账户", ratio: "30%", amount: "¥ 857k", status: "+5% 失衡", color: "#87ceeb", offset: 191, rotation: 252, warning: true },
-  { id: "pension", label: "养老账户", ratio: "40%", amount: "¥ 858k", status: "正常", color: "#baeaff", offset: 214.8, rotation: 324 },
+const quadrantDefinitions = [
+  { id: "cash", label: "现金账户", target: 10, color: "#0c6780" },
+  { id: "protection", label: "保障账户", target: 20, color: "#0372e4" },
+  { id: "investment", label: "投资账户", target: 30, color: "#87ceeb" },
+  { id: "pension", label: "养老账户", target: 40, color: "#baeaff" },
 ] as const;
+
+const normalizeQuadrant = (value: string) => {
+  if (value === "Q1" || value.includes("现金")) return "现金账户";
+  if (value === "Q1/Q2" || value.includes("保障")) return "保障账户";
+  if (value === "Q3" || value.includes("投资")) return "投资账户";
+  if (value === "Q4" || value.includes("养老")) return "养老账户";
+  return "现金账户";
+};
 
 const goals = [
   { name: "买房基金", progress: 65, path: "M0 35 Q50 30 100 20 T200 5" },
@@ -56,7 +64,7 @@ export default function AssetsPage() {
   const [billFilter, setBillFilter] = useState<"all" | "month">("all");
   const [finance, setFinance] = useState<FinanceData | null>(null);
   const [flippedAccount, setFlippedAccount] = useState<string | null>(null);
-  const [accountDrafts, setAccountDrafts] = useState<Record<string, { name: string; amount: string }>>({});
+  const [accountDrafts, setAccountDrafts] = useState<Record<string, { name: string; amount: string; quadrant: string }>>({});
   const [deleteCandidate, setDeleteCandidate] = useState<Account | null>(null);
   const [accountError, setAccountError] = useState("");
 
@@ -72,8 +80,16 @@ export default function AssetsPage() {
 
   useEffect(() => { financeRequest().then((data) => { setFinance(data); setAccounts(data.accounts); }).catch(() => undefined); }, []);
 
-  const selectedQuadrant = quadrants.find((item) => item.id === activeQuadrant);
   const totalAssets = finance?.summary.totalAssets ?? 2450000;
+  let consumedPercent = 0;
+  const quadrantData = quadrantDefinitions.map((definition) => {
+    const amount = accounts.filter((account) => normalizeQuadrant(account.quadrant) === definition.label).reduce((sum, account) => sum + account.amount, 0);
+    const actual = totalAssets ? Math.round((amount / totalAssets) * 100) : 0;
+    const item = { ...definition, amount, actual, rotation: consumedPercent * 3.6, segmentLength: actual / 100 * 238.7, warning: Math.abs(actual - definition.target) >= 6 };
+    consumedPercent += actual;
+    return item;
+  });
+  const selectedQuadrant = quadrantData.find((item) => item.id === activeQuadrant);
   const goalPaths = ["M0 35 Q50 30 100 20 T200 5", "M0 38 L50 35 L100 32 L150 30 L200 28", "M0 35 Q40 30 80 25 T160 10 T200 6"];
   const goalRows = finance ? finance.goals.map((goal, index) => ({ name: goal.title, progress: Math.min(100, Math.round((goal.current / Math.max(goal.target, 1)) * 100)), path: goalPaths[index % goalPaths.length] })) : goals;
   const billRows = finance?.transactions?.length ? finance.transactions.map((bill) => ({ ...bill, positive: bill.amount >= 0, amountLabel: `${bill.amount >= 0 ? "+" : "-"} ¥ ${new Intl.NumberFormat("zh-CN", { minimumFractionDigits: 2 }).format(Math.abs(bill.amount))}` })) : bills.map((bill) => ({ ...bill, amountLabel: bill.amount }));
@@ -103,7 +119,7 @@ export default function AssetsPage() {
     flippedAccountRef.current = open ? account.id : null;
     setFlippedAccount(open ? account.id : null);
     setAccountError("");
-    if (open) setAccountDrafts((current) => ({ ...current, [account.id]: current[account.id] ?? { name: account.name, amount: String(account.amount) } }));
+    if (open) setAccountDrafts((current) => ({ ...current, [account.id]: current[account.id] ?? { name: account.name, amount: String(account.amount), quadrant: normalizeQuadrant(account.quadrant) } }));
   });
 
   const handleCardKeyboard = (event: KeyboardEvent<HTMLElement>, account: Account) => {
@@ -112,11 +128,11 @@ export default function AssetsPage() {
 
   const saveAccount = async (event: FormEvent<HTMLFormElement>, account: Account) => {
     event.preventDefault();
-    const draft = accountDrafts[account.id] ?? { name: account.name, amount: String(account.amount) };
+    const draft = accountDrafts[account.id] ?? { name: account.name, amount: String(account.amount), quadrant: normalizeQuadrant(account.quadrant) };
     const amount = Number(draft.amount);
     if (!draft.name.trim() || !Number.isFinite(amount) || amount < 0) { setAccountError("请填写账户名称和有效金额"); return; }
     try {
-      const data = await financeRequest<FinanceData>({ action: "updateAccount", id: account.id, name: draft.name, amount });
+      const data = await financeRequest<FinanceData>({ action: "updateAccount", id: account.id, name: draft.name, amount, quadrant: draft.quadrant });
       setFinance(data); setAccounts(data.accounts); flipAccount(account, false);
     } catch (cause) { setAccountError(cause instanceof Error ? cause.message : "保存失败"); }
   };
@@ -170,31 +186,31 @@ export default function AssetsPage() {
                 <div className="quadrant-chart">
                   <svg viewBox="0 0 100 100" role="img" aria-label="标准普尔资产配置环形图">
                     <circle className="quadrant-track" cx="50" cy="50" r="38" />
-                    {quadrants.map((item) => (
+                    {quadrantData.map((item) => (
                       <circle
                         key={item.id}
                         className={`quadrant-segment ${activeQuadrant === item.id ? "active" : ""}`}
                         cx="50" cy="50" r="38"
                         stroke={item.color}
-                        strokeDasharray="238.7"
-                        strokeDashoffset={item.offset}
+                        strokeDasharray={`${item.segmentLength} ${238.7 - item.segmentLength}`}
+                        strokeDashoffset="0"
                         transform={`rotate(${item.rotation} 50 50)`}
                         tabIndex={0}
                         onMouseEnter={() => setActiveQuadrant(item.id)}
                         onMouseLeave={() => setActiveQuadrant(null)}
                         onFocus={() => setActiveQuadrant(item.id)}
                         onBlur={() => setActiveQuadrant(null)}
-                        aria-label={`${item.label} ${item.ratio}`}
+                        aria-label={`${item.label} 实际占比 ${item.actual}%`}
                       />
                     ))}
                   </svg>
-                  <div className="quadrant-center"><span>{selectedQuadrant?.label ?? "资产配置"}</span><strong>{selectedQuadrant?.ratio ?? "稳健"}</strong></div>
+                  <div className="quadrant-center"><span>{selectedQuadrant?.label ?? "资产配置"}</span><strong>{selectedQuadrant ? `${selectedQuadrant.actual}%` : "总览"}</strong></div>
                 </div>
                 <div className="quadrant-stats">
-                  {quadrants.map((item) => (
+                  {quadrantData.map((item) => (
                     <button className={item.warning ? "warning" : ""} type="button" key={item.id} onMouseEnter={() => setActiveQuadrant(item.id)} onMouseLeave={() => setActiveQuadrant(null)} onFocus={() => setActiveQuadrant(item.id)} onBlur={() => setActiveQuadrant(null)}>
-                      <span>{item.label} ({item.ratio})</span>
-                      <div><strong>{item.amount}</strong><small>{item.status}</small></div>
+                      <span>{item.label}（目标 {item.target}%）</span>
+                      <div><strong>{formatCurrency(item.amount)}</strong><small>{item.actual}% 实际占比</small></div>
                     </button>
                   ))}
                 </div>
@@ -209,11 +225,11 @@ export default function AssetsPage() {
                     <div className="account-card-inner" ref={(node) => { accountFlipRefs.current[account.id] = node; }}>
                       <section className="account-card account-card-front" role="button" tabIndex={flippedAccount === account.id ? -1 : 0} aria-label={`编辑${account.name}`} onClick={() => flipAccount(account, true)} onKeyDown={(event) => handleCardKeyboard(event, account)}>
                         <div className="account-card-top"><span className="account-icon material-symbols-outlined" aria-hidden="true">{account.icon}</span><svg viewBox="0 0 100 50" aria-hidden="true"><path d={account.path} /></svg></div>
-                        <p>{account.name} ({account.quadrant})</p><h3>{formatCurrency(account.amount)}</h3><span className="account-yield"><span className="material-symbols-outlined" aria-hidden="true">arrow_upward</span>{account.performance}</span><span className="account-edit-hint"><span className="material-symbols-outlined" aria-hidden="true">edit</span> 点击编辑</span>
+                        <p>{account.name} ({normalizeQuadrant(account.quadrant)})</p><h3>{formatCurrency(account.amount)}</h3><span className="account-yield"><span className="material-symbols-outlined" aria-hidden="true">arrow_upward</span>{account.performance}</span><span className="account-edit-hint"><span className="material-symbols-outlined" aria-hidden="true">edit</span> 点击编辑</span>
                       </section>
                       <form className="account-card account-card-back" onSubmit={(event) => saveAccount(event, account)} aria-hidden={flippedAccount !== account.id}>
                         <div className="account-edit-heading"><strong>编辑账户</strong><button type="button" onClick={() => flipAccount(account, false)} tabIndex={flippedAccount === account.id ? 0 : -1} aria-label={`关闭${account.name}编辑`}><span className="material-symbols-outlined" aria-hidden="true">close</span></button></div>
-                        <div className="account-edit-fields"><label htmlFor={`account-name-${account.id}`}>账户名称<input id={`account-name-${account.id}`} value={accountDrafts[account.id]?.name ?? account.name} onChange={(event) => setAccountDrafts((current) => ({ ...current, [account.id]: { name: event.target.value, amount: current[account.id]?.amount ?? String(account.amount) } }))} tabIndex={flippedAccount === account.id ? 0 : -1} /></label><label htmlFor={`account-amount-${account.id}`}>当前金额 (¥)<input id={`account-amount-${account.id}`} type="number" min="0" step="0.01" value={accountDrafts[account.id]?.amount ?? String(account.amount)} onChange={(event) => setAccountDrafts((current) => ({ ...current, [account.id]: { name: current[account.id]?.name ?? account.name, amount: event.target.value } }))} tabIndex={flippedAccount === account.id ? 0 : -1} /></label></div>
+                        <div className="account-edit-fields"><label htmlFor={`account-name-${account.id}`}>账户名称<input id={`account-name-${account.id}`} value={accountDrafts[account.id]?.name ?? account.name} onChange={(event) => setAccountDrafts((current) => ({ ...current, [account.id]: { name: event.target.value, amount: current[account.id]?.amount ?? String(account.amount), quadrant: current[account.id]?.quadrant ?? normalizeQuadrant(account.quadrant) } }))} tabIndex={flippedAccount === account.id ? 0 : -1} /></label><label htmlFor={`account-quadrant-${account.id}`}>所属象限<select id={`account-quadrant-${account.id}`} value={accountDrafts[account.id]?.quadrant ?? normalizeQuadrant(account.quadrant)} onChange={(event) => setAccountDrafts((current) => ({ ...current, [account.id]: { name: current[account.id]?.name ?? account.name, amount: current[account.id]?.amount ?? String(account.amount), quadrant: event.target.value } }))} tabIndex={flippedAccount === account.id ? 0 : -1}>{quadrantDefinitions.map((item) => <option key={item.id} value={item.label}>{item.label}</option>)}</select></label><label htmlFor={`account-amount-${account.id}`}>当前金额 (¥)<input id={`account-amount-${account.id}`} type="number" min="0" step="0.01" value={accountDrafts[account.id]?.amount ?? String(account.amount)} onChange={(event) => setAccountDrafts((current) => ({ ...current, [account.id]: { name: current[account.id]?.name ?? account.name, amount: event.target.value, quadrant: current[account.id]?.quadrant ?? normalizeQuadrant(account.quadrant) } }))} tabIndex={flippedAccount === account.id ? 0 : -1} /></label></div>
                         {accountError && flippedAccount === account.id && <p className="account-edit-error" role="status">{accountError}</p>}
                         <div className="account-edit-actions"><button className="account-delete" type="button" onClick={() => setDeleteCandidate(account)} tabIndex={flippedAccount === account.id ? 0 : -1}><span className="material-symbols-outlined" aria-hidden="true">delete</span>删除</button><button className="account-save" type="submit" tabIndex={flippedAccount === account.id ? 0 : -1}>保存</button></div>
                       </form>

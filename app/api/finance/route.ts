@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     else if (action === "updateGoal") result = await updateGoal(String(body.id), { title: typeof body.title === "string" ? body.title : undefined, target: body.target === undefined ? undefined : Number(body.target) });
     else if (action === "adjustGoal") result = await adjustGoal(String(body.id), Number(body.amount), String(body.note ?? "手动调整"));
     else if (action === "createAccount") result = await createAccount({ name: String(body.name ?? "").trim(), amount: Number(body.amount), quadrant: String(body.quadrant ?? "其他账户") });
-    else if (action === "updateAccount") result = await updateAccount(String(body.id), { name: String(body.name ?? ""), amount: Number(body.amount) });
+    else if (action === "updateAccount") result = await updateAccount(String(body.id), { name: String(body.name ?? ""), amount: Number(body.amount), quadrant: String(body.quadrant ?? "") });
     else if (action === "deleteAccount") result = await deleteAccount(String(body.id));
     else if (action === "saveSavings") result = await saveSavings({ amount: Number(body.amount), remark: String(body.remark ?? "") });
     else if (action === "setStrategy") result = await setStrategy(Number(body.steady));
