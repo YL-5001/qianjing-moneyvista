@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { SiteHeader } from "./components/SiteHeader";
+import { financeRequest, type FinanceData } from "./lib/finance";
 
 gsap.registerPlugin(useGSAP);
 
@@ -14,7 +15,6 @@ const quickTags = [
   ["工资", "工资收入"],
 ] as const;
 
-const WEALTH_PROGRESS = 45;
 const WEALTH_PATH = "M-50 450 Q150 420 300 350 T600 250 T1050 100";
 const ELECTRIC_PARTICLES = [
   { radius: 3.2, duration: 2.8, delay: -0.2 },
@@ -37,6 +37,7 @@ export default function Home() {
   const [remark, setRemark] = useState("");
   const [strategyFlipped, setStrategyFlipped] = useState(false);
   const [steadyAllocation, setSteadyAllocation] = useState(60);
+  const [finance, setFinance] = useState<FinanceData | null>(null);
   const amountRef = useRef<HTMLInputElement>(null);
 
   const { contextSafe } = useGSAP(() => {
@@ -71,8 +72,10 @@ export default function Home() {
     });
   });
 
-  const updateAllocation = (account: "steady" | "wealth", value: number) => {
-    setSteadyAllocation(account === "steady" ? value : 100 - value);
+  const updateAllocation = async (account: "steady" | "wealth", value: number) => {
+    const next = account === "steady" ? value : 100 - value;
+    setSteadyAllocation(next);
+    try { setFinance(await financeRequest<FinanceData>({ action: "setStrategy", steady: next })); } catch { /* next page load restores the saved value */ }
   };
 
   useEffect(() => {
@@ -90,19 +93,23 @@ export default function Home() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const submitSavings = (event: FormEvent) => {
+  useEffect(() => { financeRequest().then((data) => { setFinance(data); setSteadyAllocation(data.strategySteady); }).catch(() => undefined); }, []);
+
+  const submitSavings = async (event: FormEvent) => {
     event.preventDefault();
     if (!amount || Number(amount) <= 0) return;
-    setSaved(true);
-    window.setTimeout(() => {
-      setModalOpen(false);
+    try {
+      setFinance(await financeRequest<FinanceData>({ action: "saveSavings", amount: Number(amount), remark }));
+      setSaved(true);
       window.setTimeout(() => {
-        setAmount("");
-        setRemark("");
-        setSaved(false);
-      }, 450);
-    }, 900);
+        setModalOpen(false);
+        window.setTimeout(() => { setAmount(""); setRemark(""); setSaved(false); }, 450);
+      }, 900);
+    } catch { setSaved(false); }
   };
+
+  const wealthProgress = finance?.summary.progress ?? 45;
+  const primaryGoal = finance?.goals[0];
 
   return (
     <div ref={pageRef}>
@@ -127,7 +134,7 @@ export default function Home() {
                 </feMerge>
               </filter>
               <clipPath id="wealth-progress-clip">
-                <rect x="0" y="0" width={`${WEALTH_PROGRESS}%`} height="500" />
+                <rect x="0" y="0" width={`${wealthProgress}%`} height="500" />
               </clipPath>
             </defs>
             <path id="wealth-curve-path" className="mountain-track" d={WEALTH_PATH} />
@@ -147,7 +154,7 @@ export default function Home() {
                       dur={`${particle.duration}s`}
                       begin={`${particle.delay}s`}
                       repeatCount="indefinite"
-                      keyPoints={`0;${WEALTH_PROGRESS / 100}`}
+                      keyPoints={`0;${wealthProgress / 100}`}
                       keyTimes="0;1"
                       calcMode="linear"
                     >
@@ -164,7 +171,7 @@ export default function Home() {
           <section className="hero" aria-labelledby="hero-title">
             <h1 id="hero-title" className="home-hero-title">攀登财富之巅</h1>
             <p className="home-hero-copy">每一次储蓄都是在向您的财务巅峰迈进一步。</p>
-            <p className="altitude home-hero-altitude">当前海拔： <strong>¥450,000</strong> <span>/ 目标： ¥1,000,000</span></p>
+            <p className="altitude home-hero-altitude">当前海拔： <strong>¥{new Intl.NumberFormat("zh-CN").format(primaryGoal?.current ?? 450000)}</strong> <span>/ 目标： ¥{new Intl.NumberFormat("zh-CN").format(primaryGoal?.target ?? 1000000)}</span></p>
           </section>
 
           <section id="dashboard" className="dashboard-grid" aria-label="财富仪表盘">
@@ -176,7 +183,7 @@ export default function Home() {
                 </div>
                 <div className="progress-copy home-progress-copy">
                   <span>进度</span>
-                  <strong>{WEALTH_PROGRESS}%</strong>
+                  <strong>{wealthProgress}%</strong>
                 </div>
               </div>
 

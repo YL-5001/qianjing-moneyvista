@@ -2,6 +2,7 @@
 
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { SiteHeader } from "../components/SiteHeader";
+import { financeRequest, type FinanceData } from "../lib/finance";
 
 type GoalData = {
   id: string;
@@ -138,6 +139,7 @@ export default function GoalsPage() {
   const [feedback, setFeedback] = useState<Record<string, string>>({});
   const [formOpen, setFormOpen] = useState(false);
   const [created, setCreated] = useState(false);
+  const [dataError, setDataError] = useState("");
   const goalListRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -150,6 +152,10 @@ export default function GoalsPage() {
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
+  }, []);
+
+  useEffect(() => {
+    financeRequest().then((data) => setGoals(data.goals)).catch((cause: unknown) => setDataError(cause instanceof Error ? cause.message : "数据加载失败"));
   }, []);
 
   const flipWithKeyboard = (event: KeyboardEvent<HTMLElement>, goalId: string) => {
@@ -165,46 +171,32 @@ export default function GoalsPage() {
       : goal));
   };
 
-  const adjustCurrent = (goalId: string, direction: 1 | -1) => {
+  const persistGoal = async (goalId: string) => {
+    const goal = goals.find((item) => item.id === goalId);
+    if (!goal) return;
+    try {
+      const data = await financeRequest<FinanceData>({ action: "updateGoal", id: goalId, title: goal.title, target: goal.target });
+      setGoals(data.goals);
+    } catch (cause) { setDataError(cause instanceof Error ? cause.message : "保存失败"); }
+  };
+
+  const adjustCurrent = async (goalId: string, direction: 1 | -1) => {
     const amount = Number(adjustments[goalId]);
     if (!Number.isFinite(amount) || amount <= 0) {
       setFeedback((current) => ({ ...current, [goalId]: "请输入有效金额" }));
       return;
     }
 
-    const selectedGoal = goals.find((goal) => goal.id === goalId);
-    if (!selectedGoal) return;
-    const nextCurrent = Math.max(0, selectedGoal.current + amount * direction);
-    const change = nextCurrent - selectedGoal.current;
-    const appliedAmount = Math.abs(change);
-    const recordId = `record-${Date.now()}-${goalId}`;
-    const recordDate = new Date().toISOString().slice(0, 10);
-
-    setGoals((currentGoals) => currentGoals.map((goal) => {
-      if (goal.id !== goalId || change === 0) return goal;
-      return {
-        ...goal,
-        current: nextCurrent,
-        records: [{
-          id: recordId,
-          date: recordDate,
-          amount: change,
-          note: direction === 1 ? "手动增加" : "手动减少",
-          balance: nextCurrent,
-        }, ...goal.records],
-      };
-    }));
-    setAdjustments((current) => ({ ...current, [goalId]: "" }));
-    setFeedback((current) => ({
-      ...current,
-      [goalId]: appliedAmount > 0
-        ? `${direction === 1 ? "已增加" : "已减少"} ${formatCurrency(appliedAmount)}`
-        : "当前累计已为 ¥ 0",
-    }));
-    window.setTimeout(() => setFeedback((current) => ({ ...current, [goalId]: "" })), 1800);
+    try {
+      const data = await financeRequest<FinanceData>({ action: "adjustGoal", id: goalId, amount: amount * direction, note: direction === 1 ? "手动增加" : "手动减少" });
+      setGoals(data.goals);
+      setAdjustments((current) => ({ ...current, [goalId]: "" }));
+      setFeedback((current) => ({ ...current, [goalId]: `${direction === 1 ? "已增加" : "已减少"} ${formatCurrency(amount)}` }));
+      window.setTimeout(() => setFeedback((current) => ({ ...current, [goalId]: "" })), 1800);
+    } catch (cause) { setFeedback((current) => ({ ...current, [goalId]: cause instanceof Error ? cause.message : "保存失败" })); }
   };
 
-  const createGoal = (event: FormEvent<HTMLFormElement>) => {
+  const createGoal = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const values = new FormData(form);
@@ -213,34 +205,12 @@ export default function GoalsPage() {
     const current = Math.max(0, Number(values.get("goal-initial")) || 0);
     if (!title || !Number.isFinite(target) || target <= 0) return;
 
-    const newGoal: GoalData = {
-      id: `goal-${Date.now()}`,
-      title,
-      subtitle: `为「${title}」稳步积累`,
-      icon: matchGoalIcon(title),
-      status: "新目标",
-      current,
-      target,
-      estimate: "待规划",
-      records: current > 0 ? [{
-        id: `record-${Date.now()}-initial`,
-        date: new Date().toISOString().slice(0, 10),
-        amount: current,
-        note: "初始金额",
-        balance: current,
-      }] : [],
-    };
-
-    setGoals((currentGoals) => [...currentGoals, newGoal]);
-    setHistoryGoal(null);
-    setFlippedGoal(null);
-    setCreated(true);
-    window.setTimeout(() => goalListRef.current?.scrollTo({ left: goalListRef.current.scrollWidth, behavior: "smooth" }), 80);
-    window.setTimeout(() => {
-      setFormOpen(false);
-      setCreated(false);
-      form.reset();
-    }, 850);
+    try {
+      const data = await financeRequest<FinanceData>({ action: "createGoal", title, target, current });
+      setGoals(data.goals); setHistoryGoal(null); setFlippedGoal(null); setCreated(true);
+      window.setTimeout(() => goalListRef.current?.scrollTo({ left: goalListRef.current.scrollWidth, behavior: "smooth" }), 80);
+      window.setTimeout(() => { setFormOpen(false); setCreated(false); form.reset(); }, 850);
+    } catch (cause) { setDataError(cause instanceof Error ? cause.message : "创建失败"); }
   };
 
   return (
@@ -257,6 +227,7 @@ export default function GoalsPage() {
             <h1>我的财富巅峰</h1>
             <p>每一次储蓄都是向上的攀登。在这里，我们将复杂的财务规划转化为清晰的登顶路径，助您稳步抵达梦想的高度。</p>
           </header>
+          {dataError && <p role="status" className="goal-data-error">{dataError}</p>}
 
           <section ref={goalListRef} className="goal-card-grid" aria-label="进行中的财富目标">
             {goals.map((goal, index) => {
@@ -314,9 +285,9 @@ export default function GoalsPage() {
                       </div>
 
                       <label htmlFor={`title-${goal.id}`}>目标名称</label>
-                      <input id={`title-${goal.id}`} value={goal.title} onChange={(event) => updateGoal(goal.id, { title: event.target.value })} tabIndex={editTabIndex} />
+                      <input id={`title-${goal.id}`} value={goal.title} onChange={(event) => updateGoal(goal.id, { title: event.target.value })} onBlur={() => persistGoal(goal.id)} tabIndex={editTabIndex} />
                       <label htmlFor={`target-${goal.id}`}>目标值 (¥)</label>
-                      <input id={`target-${goal.id}`} type="number" min="1" value={goal.target} onChange={(event) => updateGoal(goal.id, { target: Math.max(1, Number(event.target.value)) })} tabIndex={editTabIndex} />
+                      <input id={`target-${goal.id}`} type="number" min="1" value={goal.target} onChange={(event) => updateGoal(goal.id, { target: Math.max(1, Number(event.target.value)) })} onBlur={() => persistGoal(goal.id)} tabIndex={editTabIndex} />
 
                       <div className="goal-back-summary">
                         <button className="goal-history-trigger" type="button" onClick={() => setHistoryGoal(goal.id)} tabIndex={editTabIndex} aria-label={`查看${goal.title}累计记录`}>

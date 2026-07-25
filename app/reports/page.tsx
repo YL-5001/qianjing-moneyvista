@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SiteHeader } from "../components/SiteHeader";
+import { financeRequest, type FinanceData } from "../lib/finance";
 
 const distribution = [
   { label: "投资", value: 65, color: "#78c8e8" },
@@ -16,6 +17,7 @@ export default function ReportsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
+  const [finance, setFinance] = useState<FinanceData | null>(null);
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -28,6 +30,8 @@ export default function ReportsPage() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, []);
 
+  useEffect(() => { financeRequest().then(setFinance).catch(() => undefined); }, []);
+
   const createReport = () => {
     setGenerated(true);
     window.setTimeout(() => {
@@ -39,6 +43,8 @@ export default function ReportsPage() {
   const trendPath = range === "year"
     ? "M0 80 C105 72 185 88 285 61 C382 34 472 48 575 22 C675 -4 770 16 868 10 C916 7 960 3 1000 0 L1000 100 L0 100 Z"
     : "M0 84 C95 78 165 66 252 70 C335 74 420 48 505 52 C590 56 665 31 748 25 C840 18 910 21 1000 4 L1000 100 L0 100 Z";
+  const totalAssets = finance?.summary.totalAssets ?? 2400000;
+  const monthlySavings = finance?.goals.flatMap((goal) => goal.records).filter((record) => record.date.startsWith(new Date().toISOString().slice(0, 7))).reduce((sum, record) => sum + record.amount, 0) ?? 30350;
 
   return (
     <>
@@ -75,7 +81,7 @@ export default function ReportsPage() {
 
             <article className="report-card distribution-report">
               <h2>资产分布</h2>
-              <div className="distribution-ring"><div><strong>¥2.4M</strong><span>总资产</span></div></div>
+              <div className="distribution-ring"><div><strong>¥{(totalAssets / 1_000_000).toFixed(1)}M</strong><span>总资产</span></div></div>
               <div className="distribution-legend">
                 {distribution.map((item) => <div key={item.label}><span className="legend-label"><i style={{ background: item.color }} />{item.label}</span><strong>{item.value}%</strong></div>)}
               </div>
@@ -87,7 +93,7 @@ export default function ReportsPage() {
             </article>
 
             <article className="report-card report-stat">
-              <span>净储蓄额</span><strong>¥30,350.00</strong>
+              <span>净储蓄额</span><strong>¥{new Intl.NumberFormat("zh-CN", { minimumFractionDigits: 2 }).format(monthlySavings)}</strong>
               <div className="stat-bars savings-bars" aria-label="净储蓄额变化柱状图"><i /><i /><i /><i /><i /></div>
             </article>
 

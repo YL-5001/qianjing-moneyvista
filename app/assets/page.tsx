@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { SiteHeader } from "../components/SiteHeader";
+import { financeRequest, type FinanceData } from "../lib/finance";
 
 type Account = {
   id: string;
@@ -46,6 +47,7 @@ export default function AssetsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [created, setCreated] = useState(false);
   const [billFilter, setBillFilter] = useState<"all" | "month">("all");
+  const [finance, setFinance] = useState<FinanceData | null>(null);
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -55,10 +57,15 @@ export default function AssetsPage() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, []);
 
-  const selectedQuadrant = quadrants.find((item) => item.id === activeQuadrant);
-  const totalAssets = 2450000 + accounts.slice(INITIAL_ACCOUNTS.length).reduce((sum, account) => sum + account.amount, 0);
+  useEffect(() => { financeRequest().then((data) => { setFinance(data); setAccounts(data.accounts); }).catch(() => undefined); }, []);
 
-  const createAsset = (event: FormEvent<HTMLFormElement>) => {
+  const selectedQuadrant = quadrants.find((item) => item.id === activeQuadrant);
+  const totalAssets = finance?.summary.totalAssets ?? 2450000;
+  const goalPaths = ["M0 35 Q50 30 100 20 T200 5", "M0 38 L50 35 L100 32 L150 30 L200 28", "M0 35 Q40 30 80 25 T160 10 T200 6"];
+  const goalRows = finance ? finance.goals.map((goal, index) => ({ name: goal.title, progress: Math.min(100, Math.round((goal.current / Math.max(goal.target, 1)) * 100)), path: goalPaths[index % goalPaths.length] })) : goals;
+  const billRows = finance?.transactions?.length ? finance.transactions.map((bill) => ({ ...bill, positive: bill.amount >= 0, amountLabel: `${bill.amount >= 0 ? "+" : "-"} ¥ ${new Intl.NumberFormat("zh-CN", { minimumFractionDigits: 2 }).format(Math.abs(bill.amount))}` })) : bills.map((bill) => ({ ...bill, amountLabel: bill.amount }));
+
+  const createAsset = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const values = new FormData(form);
@@ -67,22 +74,11 @@ export default function AssetsPage() {
     const category = String(values.get("asset-category") ?? "其他账户");
     if (!name || !Number.isFinite(amount) || amount <= 0) return;
 
-    setAccounts((current) => [...current, {
-      id: `asset-${Date.now()}`,
-      name,
-      quadrant: category,
-      amount,
-      performance: "新加入资产",
-      icon: category.includes("投资") ? "show_chart" : "account_balance",
-      accent: category.includes("投资") ? "deep" : "light",
-      path: "M0 42 Q25 36 48 30 T75 18 T100 12",
-    }]);
-    setCreated(true);
-    window.setTimeout(() => {
-      setFormOpen(false);
-      setCreated(false);
-      form.reset();
-    }, 850);
+    try {
+      const data = await financeRequest<FinanceData>({ action: "createAccount", name, amount, quadrant: category });
+      setFinance(data); setAccounts(data.accounts); setCreated(true);
+      window.setTimeout(() => { setFormOpen(false); setCreated(false); form.reset(); }, 850);
+    } catch { setCreated(false); }
   };
 
   return (
@@ -111,7 +107,7 @@ export default function AssetsPage() {
               </div>
               <div className="assets-goal-total">
                 <span>财富目标总进度</span>
-                <div><strong>45%</strong><div className="assets-mini-progress"><span /></div></div>
+                <div><strong>{finance?.summary.progress ?? 45}%</strong><div className="assets-mini-progress"><span style={{ width: `${finance?.summary.progress ?? 45}%` }} /></div></div>
               </div>
             </div>
           </header>
@@ -179,7 +175,7 @@ export default function AssetsPage() {
             <article className="asset-panel goal-tracking-panel">
               <div className="asset-panel-heading"><h2>目标追踪</h2><a href="/goals">详情</a></div>
               <div className="asset-goal-list">
-                {goals.map((goal) => (
+                {goalRows.map((goal) => (
                   <a href="/goals" className="asset-goal" key={goal.name}>
                     <div><span>{goal.name}</span><strong>{goal.progress}%</strong></div>
                     <svg viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"><path d={goal.path} /></svg>
@@ -199,10 +195,10 @@ export default function AssetsPage() {
           <section className="recent-bills" aria-labelledby="bills-title">
             <div className="bills-heading"><h2 id="bills-title">近期账单</h2><div><button className={billFilter === "all" ? "active" : ""} type="button" onClick={() => setBillFilter("all")}>全部</button><button className={billFilter === "month" ? "active" : ""} type="button" onClick={() => setBillFilter("month")}>本月</button></div></div>
             <div className="bills-card">
-              {bills.map((bill) => (
+              {billRows.map((bill) => (
                 <article className="bill-row" key={bill.id}>
                   <div className="bill-main"><span className={`bill-icon material-symbols-outlined ${bill.positive ? "positive" : ""}`} aria-hidden="true">{bill.icon}</span><div><h3>{bill.title}</h3><p>{bill.date}</p></div></div>
-                  <div className="bill-value"><strong className={bill.positive ? "positive" : ""}>{bill.amount}</strong><span>{bill.detail}</span></div>
+                  <div className="bill-value"><strong className={bill.positive ? "positive" : ""}>{bill.amountLabel}</strong><span>{bill.detail}</span></div>
                 </article>
               ))}
             </div>
