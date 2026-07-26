@@ -3,6 +3,10 @@ export type GoalRow = {
   current: number; target: number; estimate: string; muted: number;
 };
 
+type StrategyQuadrant = "现金账户" | "保障账户" | "投资账户" | "养老账户";
+type StrategyPlan = { allocations: Record<StrategyQuadrant, number>; accountIds: Record<StrategyQuadrant, string | null> };
+const strategyQuadrants: StrategyQuadrant[] = ["现金账户", "保障账户", "投资账户", "养老账户"];
+
 const now = () => new Date().toISOString();
 const today = () => new Date().toISOString().slice(0, 10);
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
@@ -61,7 +65,7 @@ export async function readFinanceData(db?: D1Database) {
     database.prepare("SELECT id,goal_id AS goalId,date,amount,note,balance FROM goal_records ORDER BY date DESC, created_at DESC"),
     database.prepare("SELECT id,name,quadrant,amount,performance,icon,accent,path FROM asset_accounts ORDER BY created_at ASC"),
     database.prepare("SELECT id,account_id AS accountId,title,date,amount,detail,icon FROM asset_transactions ORDER BY date DESC, created_at DESC LIMIT 20"),
-    database.prepare("SELECT key,value FROM settings WHERE key = ?").bind("strategy_steady"),
+    database.prepare("SELECT key,value FROM settings WHERE key IN (?, ?)").bind("strategy_steady", "strategy_plan"),
   ]);
   const records = (recordResult.results ?? []) as Array<{ id: string; goalId: string; date: string; amount: number; note: string; balance: number }>;
   const goals = ((goalResult.results ?? []) as GoalRow[]).map((goal) => ({ ...goal, muted: Boolean(goal.muted), records: records.filter((record) => record.goalId === goal.id) }));
@@ -69,8 +73,9 @@ export async function readFinanceData(db?: D1Database) {
   const totalAssets = accounts.reduce((sum, account) => sum + Number((account as { amount: number }).amount), 0);
   const targetTotal = goals.reduce((sum, goal) => sum + goal.target, 0);
   const currentTotal = goals.reduce((sum, goal) => sum + goal.current, 0);
-  const setting = (settingsResult[0]?.results?.[0] as { value?: string } | undefined)?.value;
-  return { goals, accounts, transactions: transactionResult.results ?? [], strategySteady: Number(setting ?? 60), summary: { totalAssets, targetTotal, currentTotal, progress: targetTotal ? Math.round((currentTotal / targetTotal) * 100) : 0 } };
+  const settings = new Map((settingsResult.results ?? []).map((row) => [String((row as { key: string }).key), String((row as { value: string }).value)]));
+  const strategyPlan = normalizeStrategyPlan(settings.get("strategy_plan"), accounts as Array<{ id: string; quadrant: string }>);
+  return { goals, accounts, transactions: transactionResult.results ?? [], strategySteady: Number(settings.get("strategy_steady") ?? 60), strategyPlan, summary: { totalAssets, targetTotal, currentTotal, progress: targetTotal ? Math.round((currentTotal / targetTotal) * 100) : 0 } };
 }
 
 export async function createGoal(input: { title: string; target: number; current: number }) {
@@ -136,9 +141,28 @@ export async function deleteAccount(idValue: string) {
 export async function saveSavings(input: { amount: number; remark: string }) {
   const db = await getDb(); await ensureDatabase(db);
   if (!Number.isFinite(input.amount) || input.amount <= 0) throw new Error("请输入有效金额");
+  const accounts = (await db.prepare("SELECT id,quadrant FROM asset_accounts ORDER BY created_at ASC").all()).results as Array<{ id: string; quadrant: string }>;
+  const setting = await db.prepare("SELECT value FROM settings WHERE key = ?").bind("strategy_plan").first<{ value: string }>();
+  const strategy = normalizeStrategyPlan(setting?.value, accounts);
+  const total = Math.round(input.amount);
+  const destinations = strategyQuadrants.map((quadrant) => ({ quadrant, rate: strategy.allocations[quadrant], accountId: strategy.accountIds[quadrant] })).filter((item) => item.rate > 0);
+  if (!destinations.length || destinations.some((item) => !item.accountId)) throw new Error("请先在攀登策略中为每个有比例的象限选择入账账户");
+  const allocations = destinations.map((item) => ({ ...item, amount: Math.round(total * item.rate / 100) }));
+  allocations[allocations.length - 1].amount += total - allocations.reduce((sum, item) => sum + item.amount, 0);
   const goal = await db.prepare("SELECT id FROM goals ORDER BY created_at ASC LIMIT 1").first<{ id: string }>();
   if (!goal) throw new Error("请先创建一个目标");
-  return adjustGoal(goal.id, input.amount, input.remark || "今日攒钱");
+  const goalCurrent = await db.prepare("SELECT current_amount AS current FROM goals WHERE id = ?").bind(goal.id).first<{ current: number }>();
+  const nextGoalCurrent = (goalCurrent?.current ?? 0) + total;
+  const time = now();
+  await db.batch([
+    ...allocations.flatMap((item) => [
+      db.prepare("UPDATE asset_accounts SET amount = amount + ?, updated_at = ? WHERE id = ?").bind(item.amount, time, item.accountId),
+      db.prepare("INSERT INTO asset_transactions (id,account_id,title,date,amount,detail,icon,created_at) VALUES (?,?,?,?,?,?,?,?)").bind(id("transaction"), item.accountId, `${item.quadrant} · 本月攒钱分配`, time.slice(0, 16).replace("T", " "), item.amount, `攀登策略 ${item.rate}%`, "savings", time),
+    ]),
+    db.prepare("UPDATE goals SET current_amount = ?, updated_at = ? WHERE id = ?").bind(nextGoalCurrent, time, goal.id),
+    db.prepare("INSERT INTO goal_records (id,goal_id,date,amount,note,balance,created_at) VALUES (?,?,?,?,?,?,?)").bind(id("record"), goal.id, today(), total, input.remark || "本月攒钱", nextGoalCurrent, time),
+  ]);
+  return readFinanceData(db);
 }
 
 export async function setStrategy(steady: number) {
@@ -146,6 +170,38 @@ export async function setStrategy(steady: number) {
   if (!Number.isFinite(steady) || steady < 0 || steady > 100) throw new Error("配置比例无效");
   await db.prepare("INSERT INTO settings (key,value,updated_at) VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at").bind("strategy_steady", String(Math.round(steady)), now()).run();
   return readFinanceData(db);
+}
+
+export async function setStrategyPlan(input: StrategyPlan) {
+  const db = await getDb(); await ensureDatabase(db);
+  const accounts = (await db.prepare("SELECT id,quadrant FROM asset_accounts ORDER BY created_at ASC").all()).results as Array<{ id: string; quadrant: string }>;
+  const plan = normalizeStrategyPlan(JSON.stringify(input), accounts);
+  const total = strategyQuadrants.reduce((sum, quadrant) => sum + plan.allocations[quadrant], 0);
+  if (total !== 100) throw new Error("四类账户的配置比例需合计 100%");
+  await db.prepare("INSERT INTO settings (key,value,updated_at) VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at").bind("strategy_plan", JSON.stringify(plan), now()).run();
+  return readFinanceData(db);
+}
+
+function normalizeStrategyPlan(raw: string | undefined, accounts: Array<{ id: string; quadrant: string }>): StrategyPlan {
+  const defaults: StrategyPlan = { allocations: { "现金账户": 10, "保障账户": 20, "投资账户": 40, "养老账户": 30 }, accountIds: { "现金账户": null, "保障账户": null, "投资账户": null, "养老账户": null } };
+  try {
+    const parsed = raw ? JSON.parse(raw) as Partial<StrategyPlan> : {};
+    for (const quadrant of strategyQuadrants) {
+      const allocation = Number(parsed.allocations?.[quadrant]);
+      if (Number.isFinite(allocation) && allocation >= 0) defaults.allocations[quadrant] = Math.round(allocation);
+      const matching = accounts.filter((account) => normalizeAccountQuadrant(account.quadrant) === quadrant);
+      const requested = parsed.accountIds?.[quadrant];
+      defaults.accountIds[quadrant] = matching.some((account) => account.id === requested) ? requested ?? null : matching[0]?.id ?? null;
+    }
+  } catch { /* fall back to the default strategy */ }
+  return defaults;
+}
+
+function normalizeAccountQuadrant(value: string): StrategyQuadrant {
+  if (value === "Q1" || value.includes("现金")) return "现金账户";
+  if (value === "Q1/Q2" || value.includes("保障")) return "保障账户";
+  if (value === "Q3" || value.includes("投资")) return "投资账户";
+  return "养老账户";
 }
 
 function matchGoalIcon(title: string) {

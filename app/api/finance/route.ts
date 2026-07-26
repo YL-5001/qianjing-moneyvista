@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adjustGoal, createAccount, createGoal, deleteAccount, readFinanceData, saveSavings, setStrategy, updateAccount, updateGoal } from "../../../db/runtime";
+import { adjustGoal, createAccount, createGoal, deleteAccount, readFinanceData, saveSavings, setStrategy, setStrategyPlan, updateAccount, updateGoal } from "../../../db/runtime";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     else if (action === "deleteAccount") result = await deleteAccount(String(body.id));
     else if (action === "saveSavings") result = await saveSavings({ amount: Number(body.amount), remark: String(body.remark ?? "") });
     else if (action === "setStrategy") result = await setStrategy(Number(body.steady));
+    else if (action === "setStrategyPlan") result = await setStrategyPlan(body.plan as Parameters<typeof setStrategyPlan>[0]);
     else return error("不支持的操作");
     return NextResponse.json(result);
   } catch (cause) { return error(cause instanceof Error ? cause.message : "保存失败"); }

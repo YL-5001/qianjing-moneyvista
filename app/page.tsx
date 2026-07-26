@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { SiteHeader } from "./components/SiteHeader";
-import { financeRequest, type FinanceData } from "./lib/finance";
+import { financeRequest, type Account, type FinanceData, type StrategyPlan, type StrategyQuadrant } from "./lib/finance";
 
 gsap.registerPlugin(useGSAP);
 
@@ -16,6 +16,16 @@ const quickTags = [
 ] as const;
 
 const WEALTH_PATH = "M-50 450 Q150 420 300 350 T600 250 T1050 100";
+const STRATEGY_QUADRANTS: Array<{ key: StrategyQuadrant; icon: string }> = [
+  { key: "现金账户", icon: "account_balance_wallet" }, { key: "保障账户", icon: "shield" }, { key: "投资账户", icon: "trending_up" }, { key: "养老账户", icon: "elderly" },
+];
+const DEFAULT_STRATEGY: StrategyPlan = { allocations: { "现金账户": 10, "保障账户": 20, "投资账户": 40, "养老账户": 30 }, accountIds: { "现金账户": null, "保障账户": null, "投资账户": null, "养老账户": null } };
+const normalizeQuadrant = (value: string): StrategyQuadrant => {
+  if (value === "Q1" || value.includes("现金")) return "现金账户";
+  if (value === "Q1/Q2" || value.includes("保障")) return "保障账户";
+  if (value === "Q3" || value.includes("投资")) return "投资账户";
+  return "养老账户";
+};
 const ELECTRIC_PARTICLES = [
   { radius: 3.2, duration: 2.8, delay: -0.2 },
   { radius: 1.8, duration: 3.4, delay: -0.7 },
@@ -36,8 +46,10 @@ export default function Home() {
   const [amount, setAmount] = useState("");
   const [remark, setRemark] = useState("");
   const [strategyFlipped, setStrategyFlipped] = useState(false);
-  const [steadyAllocation, setSteadyAllocation] = useState(60);
+  const [strategyPlan, setStrategyPlan] = useState<StrategyPlan>(DEFAULT_STRATEGY);
+  const strategyPlanRef = useRef<StrategyPlan>(DEFAULT_STRATEGY);
   const [finance, setFinance] = useState<FinanceData | null>(null);
+  const [savingsError, setSavingsError] = useState("");
   const amountRef = useRef<HTMLInputElement>(null);
 
   const { contextSafe } = useGSAP(() => {
@@ -72,10 +84,36 @@ export default function Home() {
     });
   });
 
-  const updateAllocation = async (account: "steady" | "wealth", value: number) => {
-    const next = account === "steady" ? value : 100 - value;
-    setSteadyAllocation(next);
-    try { setFinance(await financeRequest<FinanceData>({ action: "setStrategy", steady: next })); } catch { /* next page load restores the saved value */ }
+  const persistStrategy = async (plan: StrategyPlan) => {
+    try {
+      const data = await financeRequest<FinanceData>({ action: "setStrategyPlan", plan });
+      strategyPlanRef.current = data.strategyPlan;
+      setStrategyPlan(data.strategyPlan);
+      setFinance(data);
+    } catch { /* the next successful save restores server state */ }
+  };
+
+  const updateAllocation = (quadrant: StrategyQuadrant, requested: number) => {
+    const next: StrategyPlan = { allocations: { ...strategyPlan.allocations }, accountIds: { ...strategyPlan.accountIds } };
+    const current = next.allocations[quadrant];
+    let difference = Math.max(0, Math.min(100, Math.round(requested))) - current;
+    const others = STRATEGY_QUADRANTS.map((item) => item.key).filter((key) => key !== quadrant);
+    if (difference > 0) {
+      for (const other of others) { const taken = Math.min(next.allocations[other], difference); next.allocations[other] -= taken; difference -= taken; }
+      next.allocations[quadrant] = Math.max(current, Math.round(requested) - difference);
+    } else if (difference < 0) {
+      next.allocations[quadrant] = Math.round(requested);
+      next.allocations[others[0]] += -difference;
+    }
+    strategyPlanRef.current = next;
+    setStrategyPlan(next);
+    return next;
+  };
+
+  const updateStrategyAccount = (quadrant: StrategyQuadrant, accountId: string) => {
+    const next = { allocations: { ...strategyPlan.allocations }, accountIds: { ...strategyPlan.accountIds, [quadrant]: accountId || null } };
+    strategyPlanRef.current = next;
+    setStrategyPlan(next); void persistStrategy(next);
   };
 
   useEffect(() => {
@@ -93,23 +131,25 @@ export default function Home() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  useEffect(() => { financeRequest().then((data) => { setFinance(data); setSteadyAllocation(data.strategySteady); }).catch(() => undefined); }, []);
+  useEffect(() => { financeRequest().then((data) => { setFinance(data); strategyPlanRef.current = data.strategyPlan ?? DEFAULT_STRATEGY; setStrategyPlan(strategyPlanRef.current); }).catch(() => undefined); }, []);
 
   const submitSavings = async (event: FormEvent) => {
     event.preventDefault();
     if (!amount || Number(amount) <= 0) return;
     try {
+      setSavingsError("");
       setFinance(await financeRequest<FinanceData>({ action: "saveSavings", amount: Number(amount), remark }));
       setSaved(true);
       window.setTimeout(() => {
         setModalOpen(false);
         window.setTimeout(() => { setAmount(""); setRemark(""); setSaved(false); }, 450);
       }, 900);
-    } catch { setSaved(false); }
+    } catch (cause) { setSaved(false); setSavingsError(cause instanceof Error ? cause.message : "保存失败"); }
   };
 
   const wealthProgress = finance?.summary.progress ?? 45;
   const primaryGoal = finance?.goals[0];
+  const accountsForQuadrant = (quadrant: StrategyQuadrant): Account[] => (finance?.accounts ?? []).filter((account) => normalizeQuadrant(account.quadrant) === quadrant);
 
   return (
     <div ref={pageRef}>
@@ -213,7 +253,7 @@ export default function Home() {
                     <span className="material-symbols-outlined" aria-hidden="true">tips_and_updates</span>
                     <h2>攀登策略</h2>
                   </div>
-                  <p className="home-strategy-copy">目前的攀登趋势非常稳健。如果每月能额外存入 <strong>¥200</strong>，您的财务顶峰将提早 12 天到达。</p>
+                  <p className="home-strategy-copy">将每月攒钱按四类账户自动分配。配置完成后，每一笔存入都会精准进入您选定的账户。</p>
                   <span className="strategy-card-action home-strategy-action">点击调整策略 <span className="material-symbols-outlined" aria-hidden="true">flip</span></span>
                 </section>
 
@@ -222,15 +262,17 @@ export default function Home() {
                     <div><span>资产配置</span><h2>攀登策略设置</h2></div>
                     <button type="button" onClick={flipStrategy} tabIndex={strategyFlipped ? 0 : -1} aria-label="返回攀登策略"><span className="material-symbols-outlined" aria-hidden="true">close</span></button>
                   </div>
-                  <div className="allocation-control">
-                    <div><span>稳健账户</span><strong>{steadyAllocation}%</strong></div>
-                    <input type="range" min="0" max="100" value={steadyAllocation} onChange={(event) => updateAllocation("steady", Number(event.target.value))} tabIndex={strategyFlipped ? 0 : -1} aria-label="稳健账户配置比例" />
+                  <div className="strategy-allocation-list">
+                    {STRATEGY_QUADRANTS.map(({ key, icon }) => {
+                      const options = accountsForQuadrant(key);
+                      return <div className="allocation-control strategy-quadrant" key={key}>
+                        <div><span><i className="material-symbols-outlined" aria-hidden="true">{icon}</i>{key}</span><strong>{strategyPlan.allocations[key]}%</strong></div>
+                        <select value={strategyPlan.accountIds[key] ?? ""} onChange={(event) => updateStrategyAccount(key, event.target.value)} tabIndex={strategyFlipped ? 0 : -1} aria-label={`${key}入账账户`} disabled={!options.length}><option value="">{options.length ? "选择入账账户" : "暂无此类账户"}</option>{options.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select>
+                        <input type="range" min="0" max="100" value={strategyPlan.allocations[key]} onChange={(event) => updateAllocation(key, Number(event.target.value))} onPointerUp={() => void persistStrategy(strategyPlanRef.current)} tabIndex={strategyFlipped ? 0 : -1} aria-label={`${key}配置比例`} />
+                      </div>;
+                    })}
                   </div>
-                  <div className="allocation-control wealth">
-                    <div><span>理财账户</span><strong>{100 - steadyAllocation}%</strong></div>
-                    <input type="range" min="0" max="100" value={100 - steadyAllocation} onChange={(event) => updateAllocation("wealth", Number(event.target.value))} tabIndex={strategyFlipped ? 0 : -1} aria-label="理财账户配置比例" />
-                  </div>
-                  <p className="allocation-note"><span className="material-symbols-outlined" aria-hidden="true">sync</span> 两个账户自动保持 100% 配置</p>
+                  <p className="allocation-note"><span className="material-symbols-outlined" aria-hidden="true">sync</span> 四类账户自动保持 100% 配置</p>
                 </section>
               </div>
             </aside>
@@ -266,6 +308,8 @@ export default function Home() {
 
             <label className="field-label" htmlFor="savings-remark">备注</label>
             <input className="remark-field" id="savings-remark" type="text" placeholder="记录这笔钱的来源..." value={remark} onChange={(event) => setRemark(event.target.value)} tabIndex={modalOpen ? 0 : -1} />
+            <p className="savings-distribution">将按攀登策略分配至已选账户</p>
+            {savingsError && <p className="savings-error" role="status">{savingsError}</p>}
 
             <span className="field-label tag-label">常用标签</span>
             <div className="quick-tags">
