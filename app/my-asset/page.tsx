@@ -61,6 +61,8 @@ export default function AssetsPage() {
   const [accounts, setAccounts] = useState<Account[]>(INITIAL_ACCOUNTS);
   const [formOpen, setFormOpen] = useState(false);
   const [created, setCreated] = useState(false);
+  const [creatingAsset, setCreatingAsset] = useState(false);
+  const [assetFormError, setAssetFormError] = useState("");
   const [billFilter, setBillFilter] = useState<"all" | "month">("all");
   const [finance, setFinance] = useState<FinanceData | null>(null);
   const [flippedAccount, setFlippedAccount] = useState<string | null>(null);
@@ -96,18 +98,26 @@ export default function AssetsPage() {
 
   const createAsset = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (creatingAsset) return;
     const form = event.currentTarget;
     const values = new FormData(form);
     const name = String(values.get("asset-name") ?? "").trim();
     const amount = Number(values.get("asset-amount"));
     const category = String(values.get("asset-category") ?? "其他账户");
-    if (!name || !Number.isFinite(amount) || amount <= 0) return;
+    if (!name || !Number.isFinite(amount) || amount <= 0) { setAssetFormError("请填写资产名称和有效金额"); return; }
 
     try {
+      setCreatingAsset(true);
+      setAssetFormError("");
       const data = await financeRequest<FinanceData>({ action: "createAccount", name, amount, quadrant: category });
-      setFinance(data); setAccounts(data.accounts); setCreated(true);
+      setFinance(data);
+      setAccounts(data.accounts);
+      setCreated(true);
       window.setTimeout(() => { setFormOpen(false); setCreated(false); form.reset(); }, 850);
-    } catch { setCreated(false); }
+    } catch (cause) {
+      setCreated(false);
+      setAssetFormError(cause instanceof Error ? cause.message : "添加失败，请稍后重试");
+    } finally { setCreatingAsset(false); }
   };
 
   const flipAccount = contextSafe((account: Account, open: boolean) => {
@@ -281,7 +291,8 @@ export default function AssetsPage() {
           <label htmlFor="asset-name">资产名称</label><input id="asset-name" name="asset-name" placeholder="例如：招商银行储蓄" required tabIndex={formOpen ? 0 : -1} />
           <label htmlFor="asset-amount">当前金额 (¥)</label><input id="asset-amount" name="asset-amount" type="number" min="1" placeholder="0.00" required tabIndex={formOpen ? 0 : -1} />
           <label htmlFor="asset-category">账户类型</label><select id="asset-category" name="asset-category" tabIndex={formOpen ? 0 : -1}><option>现金账户</option><option>保障账户</option><option>投资账户</option><option>养老账户</option></select>
-          <div><button type="button" onClick={() => setFormOpen(false)} tabIndex={formOpen ? 0 : -1}>取消</button><button className={created ? "created" : ""} type="submit" tabIndex={formOpen ? 0 : -1}>{created ? "添加成功" : "添加"}</button></div>
+          {assetFormError && <p className="asset-form-error" role="status">{assetFormError}</p>}
+          <div><button type="button" onClick={() => { setFormOpen(false); setAssetFormError(""); }} tabIndex={formOpen ? 0 : -1}>取消</button><button className={created ? "created" : ""} type="submit" disabled={creatingAsset} tabIndex={formOpen ? 0 : -1}>{created ? "添加成功" : creatingAsset ? "添加中…" : "添加"}</button></div>
         </form>
       </section>
 

@@ -466,9 +466,11 @@ button { color: inherit; }
 .new-asset-popover label { display: block; margin: 12px 0 6px; color: var(--muted); font-size: 12px; font-weight: 600; }
 .new-asset-popover input, .new-asset-popover select { width: 100%; height: 42px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; outline: 0; background: #f3f3f5; }
 .new-asset-popover input:focus, .new-asset-popover select:focus { border-color: var(--sky); background: white; box-shadow: 0 0 0 3px rgba(135,206,235,.15); }
+.asset-form-error { margin: 10px 0 -5px; color: #b42318; font-size: 12px; line-height: 1.35; }
 .new-asset-popover form > div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
 .new-asset-popover form > div button { height: 42px; border: 0; border-radius: 8px; background: #e8e8ea; cursor: pointer; font-size: 14px; font-weight: 600; }
 .new-asset-popover form > div button:last-child { color: #005870; background: var(--sky); }
+.new-asset-popover form > div button:disabled { cursor: wait; opacity: .7; }
 .new-asset-popover form > div button.created { color: white; background: #22a95d; }
 .asset-fab.active span { transform: rotate(45deg); }
 
