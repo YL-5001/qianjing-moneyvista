@@ -220,7 +220,7 @@ export default function AssetsPage() {
                   {quadrantData.map((item) => (
                     <button className={item.warning ? "warning" : ""} type="button" key={item.id} onMouseEnter={() => setActiveQuadrant(item.id)} onMouseLeave={() => setActiveQuadrant(null)} onFocus={() => setActiveQuadrant(item.id)} onBlur={() => setActiveQuadrant(null)}>
                       <span>{item.label}（目标 {item.target}%）</span>
-                      <div><strong>{formatCurrency(item.amount)}</strong><small>{item.actual}% 实际占比</small></div>
+                      <div><strong>{formatCurrency(item.amount)}</strong></div>
                     </button>
                   ))}
                 </div>
