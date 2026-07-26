@@ -8,7 +8,6 @@ const today = () => new Date().toISOString().slice(0, 10);
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 
 export async function getDb(): Promise<D1Database> {
-  const { env } = await import("cloudflare:workers");
   return env.DB as D1Database;
 }
 
@@ -153,3 +152,4 @@ function matchGoalIcon(title: string) {
   const rules: Array<[RegExp, string]> = [[/(房|住宅|公寓|装修|置业)/, "home"], [/(车|汽车|摩托|交通)/, "directions_car"], [/(旅行|旅游|环球|度假|出国)/, "public"], [/(教育|学习|学校|留学|课程)/, "school"], [/(医疗|健康|看病|手术|保险)/, "health_and_safety"], [/(退休|养老|晚年)/, "account_balance_wallet"], [/(创业|事业|公司|生意)/, "rocket_launch"], [/(婚礼|结婚|婚姻)/, "favorite"], [/(电脑|手机|数码|设备)/, "devices"], [/(应急|备用|储备)/, "savings"]];
   return rules.find(([pattern]) => pattern.test(title))?.[1] ?? "flag";
 }
+import { env } from "cloudflare:workers";
