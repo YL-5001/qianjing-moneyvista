@@ -77,7 +77,7 @@ export default function Home() {
 
     gsap.killTweensOf(strategyInnerRef.current);
     gsap.to(strategyInnerRef.current, {
-      rotationX: nextFlipped ? 180 : 0,
+      rotationY: nextFlipped ? 180 : 0,
       duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 0.84,
       ease: "back.inOut(1.28)",
       overwrite: "auto",

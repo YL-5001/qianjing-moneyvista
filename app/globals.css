@@ -124,12 +124,12 @@ button { color: inherit; }
 .metric-detail.positive { color: #16a35a; }
 .metric-detail.blue { color: var(--sky); }
 
-.strategy-card { position: sticky; top: 96px; min-height: 476px; perspective: 1200px; }
-.strategy-card-inner { position: relative; width: 100%; min-height: 476px; transform-style: preserve-3d; will-change: transform; }
-.strategy-card-face { position: absolute; inset: 0; padding: 32px; overflow: hidden; border: 1px solid rgba(135,206,235,.25); border-radius: 16px; background: rgba(135,206,235,.06); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.strategy-card { position: sticky; top: 96px; min-height: 548px; perspective: 1400px; }
+.strategy-card-inner { position: relative; width: 100%; min-height: 548px; transform-style: preserve-3d; transform-origin: center; will-change: transform; }
+.strategy-card-face { position: absolute; inset: 0; padding: 27px; overflow: hidden; border: 1px solid rgba(135,206,235,.25); border-radius: 16px; background: rgba(135,206,235,.06); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .strategy-card-front { cursor: pointer; transition: border-color .25s, background .25s; }
 .strategy-card-front:hover, .strategy-card-front:focus-visible { outline: 0; border-color: rgba(135,206,235,.55); background: rgba(135,206,235,.11); }
-.strategy-card-back { display: flex; flex-direction: column; transform: rotateX(180deg); background: linear-gradient(150deg,rgba(255,255,255,.96),rgba(231,247,253,.94)); }
+.strategy-card-back { display: flex; flex-direction: column; transform: rotateY(180deg); background: linear-gradient(150deg,rgba(255,255,255,.96),rgba(231,247,253,.94)); }
 .strategy-title { display: flex; gap: 9px; align-items: center; color: var(--sky); margin-bottom: 22px; }
 .strategy-title .material-symbols-outlined { font-size: 26px; }
 .strategy-title h2 { margin: 0; font-size: 14px; font-weight: 700; }
@@ -137,14 +137,14 @@ button { color: inherit; }
 .strategy-card-front strong { color: var(--sky); }
 .strategy-card-action { display: inline-flex; align-items: center; gap: 7px; color: var(--sky); font-size: 13px; font-weight: 650; }
 .strategy-card-action .material-symbols-outlined { font-size: 17px; transition: transform .28s; }
-.strategy-card-front:hover .strategy-card-action .material-symbols-outlined { transform: rotateX(180deg); }
+.strategy-card-front:hover .strategy-card-action .material-symbols-outlined { transform: rotateY(180deg); }
 .strategy-settings-heading { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 13px; }
 .strategy-settings-heading > div > span { display: block; margin-bottom: 3px; color: var(--sky-deep); font-size: 11px; font-weight: 700; }
 .strategy-settings-heading h2 { margin: 0; font-size: 19px; line-height: 1.25; }
 .strategy-settings-heading button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: rgba(255,255,255,.8); cursor: pointer; transition: background .2s, transform .2s; }
 .strategy-settings-heading button:hover { background: white; transform: rotate(90deg); }
-.strategy-allocation-list { display: grid; gap: 8px; }
-.allocation-control { padding: 9px 11px 10px; border: 1px solid rgba(135,206,235,.24); border-radius: 11px; background: rgba(255,255,255,.64); }
+.strategy-allocation-list { display: grid; gap: 7px; }
+.allocation-control { padding: 8px 11px 9px; border: 1px solid rgba(135,206,235,.24); border-radius: 11px; background: rgba(255,255,255,.64); }
 .allocation-control > div { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .allocation-control span { color: var(--muted); font-size: 12px; font-weight: 600; }
 .strategy-quadrant span { display: inline-flex; align-items: center; gap: 5px; }
@@ -608,7 +608,9 @@ button { color: inherit; }
   .metrics { grid-template-columns: 1fr; gap: 14px; }
   .card-heading { margin-bottom: 30px; }
   .strategy-card { position: relative; top: auto; padding: 0; }
-  .strategy-card-face { padding: 24px; }
+  .strategy-card { min-height: 532px; }
+  .strategy-card-inner { min-height: 532px; }
+  .strategy-card-face { padding: 22px; }
   .wealth-mountain { height: 76vh; }
   .fab { width: 58px; height: 58px; right: 20px; bottom: 24px; }
   .modal-layer { align-items: flex-end; padding: 0; }
