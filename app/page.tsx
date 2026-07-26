@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { type CSSProperties, FormEvent, useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { SiteHeader } from "./components/SiteHeader";
@@ -267,8 +267,8 @@ export default function Home() {
                       const options = accountsForQuadrant(key);
                       return <div className="allocation-control strategy-quadrant" key={key}>
                         <div><span><i className="material-symbols-outlined" aria-hidden="true">{icon}</i>{key}</span><strong>{strategyPlan.allocations[key]}%</strong></div>
-                        <select value={strategyPlan.accountIds[key] ?? ""} onChange={(event) => updateStrategyAccount(key, event.target.value)} tabIndex={strategyFlipped ? 0 : -1} aria-label={`${key}入账账户`} disabled={!options.length}><option value="">{options.length ? "选择入账账户" : "暂无此类账户"}</option>{options.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select>
-                        <input type="range" min="0" max="100" value={strategyPlan.allocations[key]} onChange={(event) => updateAllocation(key, Number(event.target.value))} onPointerUp={() => void persistStrategy(strategyPlanRef.current)} tabIndex={strategyFlipped ? 0 : -1} aria-label={`${key}配置比例`} />
+                        {options.length > 1 ? <select value={strategyPlan.accountIds[key] ?? ""} onChange={(event) => updateStrategyAccount(key, event.target.value)} tabIndex={strategyFlipped ? 0 : -1} aria-label={`${key}入账账户`}><option value="">选择入账账户</option>{options.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select> : options.length === 1 ? <p className="strategy-account-fixed"><span className="material-symbols-outlined" aria-hidden="true">check_circle</span> 自动存入 {options[0].name}</p> : <p className="strategy-account-empty"><span className="material-symbols-outlined" aria-hidden="true">info</span> 请先在资产页添加此类账户</p>}
+                        <input className="allocation-range" style={{ "--allocation": `${strategyPlan.allocations[key]}%` } as CSSProperties} type="range" min="0" max="100" value={strategyPlan.allocations[key]} onChange={(event) => updateAllocation(key, Number(event.target.value))} onPointerUp={() => void persistStrategy(strategyPlanRef.current)} onKeyUp={() => void persistStrategy(strategyPlanRef.current)} tabIndex={strategyFlipped ? 0 : -1} aria-label={`${key}配置比例`} />
                       </div>;
                     })}
                   </div>
