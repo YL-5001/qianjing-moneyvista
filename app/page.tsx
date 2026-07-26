@@ -280,7 +280,7 @@ export default function Home() {
         </div>
       </main>
 
-      <button className={`fab ${modalOpen ? "fab-hidden" : ""}`} type="button" onClick={() => setModalOpen(true)} aria-label="添加今日攒钱">
+      <button className={`fab ${modalOpen ? "fab-hidden" : ""}`} type="button" onClick={() => setModalOpen(true)} aria-label="添加本月攒钱">
         <span aria-hidden="true">＋</span>
       </button>
 
@@ -293,8 +293,8 @@ export default function Home() {
               <div className="modal-heading-copy">
                 <span className="savings-icon material-symbols-outlined" aria-hidden="true">savings</span>
                 <div>
-                  <h2 id="savings-title">今日攒钱</h2>
-                  <p>记录财富的一小步</p>
+                  <h2 id="savings-title">本月攒钱</h2>
+                  <p>一次记录，按策略分配</p>
                 </div>
               </div>
               <button className="modal-close material-symbols-outlined" type="button" onClick={() => setModalOpen(false)} aria-label="关闭">close</button>
