@@ -2,7 +2,7 @@
 
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { SiteHeader } from "../components/SiteHeader";
-import { financeRequest, type FinanceData } from "../lib/finance";
+import { financeRequest, type CompletedGoal, type FinanceData } from "../lib/finance";
 
 type GoalData = {
   id: string;
@@ -42,11 +42,6 @@ const INITIAL_GOALS: GoalData[] = [
     { id: "retirement-1", date: "2026-05-01", amount: 6000, note: "定期投入", balance: 468000 },
   ] },
 ];
-
-const completedGoals = [
-  { title: "首台汽车购置计划", date: "2023年10月", amount: "¥ 350,000" },
-  { title: "应急备用金", date: "2023年02月", amount: "¥ 100,000" },
-] as const;
 
 const formatCurrency = (value: number) => `¥ ${new Intl.NumberFormat("zh-CN").format(value)}`;
 const formatCompactCurrency = (value: number) => {
@@ -140,6 +135,8 @@ export default function GoalsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [created, setCreated] = useState(false);
   const [dataError, setDataError] = useState("");
+  const [completedGoals, setCompletedGoals] = useState<CompletedGoal[]>([]);
+  const [deleteCandidate, setDeleteCandidate] = useState<{ id: string; title: string; completed: boolean } | null>(null);
   const goalListRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -148,6 +145,7 @@ export default function GoalsPage() {
         setHistoryGoal(null);
         setFlippedGoal(null);
         setFormOpen(false);
+        setDeleteCandidate(null);
       }
     };
     window.addEventListener("keydown", closeOnEscape);
@@ -155,7 +153,7 @@ export default function GoalsPage() {
   }, []);
 
   useEffect(() => {
-    financeRequest().then((data) => setGoals(data.goals)).catch((cause: unknown) => setDataError(cause instanceof Error ? cause.message : "数据加载失败"));
+    financeRequest().then((data) => { setGoals(data.goals); setCompletedGoals(data.completedGoals); }).catch((cause: unknown) => setDataError(cause instanceof Error ? cause.message : "数据加载失败"));
   }, []);
 
   const flipWithKeyboard = (event: KeyboardEvent<HTMLElement>, goalId: string) => {
@@ -211,6 +209,14 @@ export default function GoalsPage() {
       window.setTimeout(() => goalListRef.current?.scrollTo({ left: goalListRef.current.scrollWidth, behavior: "smooth" }), 80);
       window.setTimeout(() => { setFormOpen(false); setCreated(false); form.reset(); }, 850);
     } catch (cause) { setDataError(cause instanceof Error ? cause.message : "创建失败"); }
+  };
+
+  const confirmDeleteGoal = async () => {
+    if (!deleteCandidate) return;
+    try {
+      const data = await financeRequest<FinanceData>({ action: deleteCandidate.completed ? "deleteCompletedGoal" : "deleteGoal", id: deleteCandidate.id });
+      setGoals(data.goals); setCompletedGoals(data.completedGoals); setDeleteCandidate(null); setHistoryGoal(null); setFlippedGoal(null);
+    } catch (cause) { setDataError(cause instanceof Error ? cause.message : "删除失败"); setDeleteCandidate(null); }
   };
 
   return (
@@ -316,6 +322,7 @@ export default function GoalsPage() {
                         </div>
                         <p className={feedback[goal.id] ? "visible" : ""} role="status">{feedback[goal.id] || "输入金额后选择增加或减少"}</p>
                       </div>
+                      <button className="goal-delete-trigger" type="button" onClick={() => setDeleteCandidate({ id: goal.id, title: goal.title, completed: false })} tabIndex={editTabIndex}><span className="material-symbols-outlined" aria-hidden="true">delete</span>删除目标</button>
 
                       <aside className={`goal-history-drawer ${historyOpen ? "open" : ""}`} aria-hidden={!historyOpen} aria-label={`${goal.title}累计记录`}>
                         <div className="goal-history-heading">
@@ -353,12 +360,14 @@ export default function GoalsPage() {
             <div className="completed-heading"><h2 id="completed-title">已达巅峰</h2><span aria-hidden="true" /></div>
             <div className="completed-grid">
               {completedGoals.map((goal) => (
-                <article className="completed-card" key={goal.title}>
+                <article className="completed-card" key={goal.id}>
                   <span className="completed-icon material-symbols-outlined" aria-hidden="true">check_circle</span>
-                  <div><h3>{goal.title}</h3><p>达成日期: {goal.date}</p></div>
-                  <strong>{goal.amount}</strong>
+                  <div><h3>{goal.title}</h3><p>达成日期: {goal.completedAt}</p></div>
+                  <strong>{formatCurrency(goal.amount)}</strong>
+                  <button className="completed-delete-trigger" type="button" onClick={() => setDeleteCandidate({ id: goal.id, title: goal.title, completed: true })} aria-label={`删除已达成目标${goal.title}`}><span className="material-symbols-outlined" aria-hidden="true">delete</span></button>
                 </article>
               ))}
+              {completedGoals.length === 0 && <p className="completed-empty">暂无已达成目标</p>}
             </div>
           </section>
         </div>
@@ -373,6 +382,14 @@ export default function GoalsPage() {
           <div className="new-goal-actions"><button type="button" onClick={() => setFormOpen(false)} tabIndex={formOpen ? 0 : -1}>取消</button><button className={created ? "created" : ""} type="submit" tabIndex={formOpen ? 0 : -1}>{created ? "创建成功" : "创建"}</button></div>
         </form>
       </section>
+
+      <div className={`goal-delete-dialog ${deleteCandidate ? "open" : ""}`} aria-hidden={!deleteCandidate}>
+        <button className="goal-delete-backdrop" type="button" onClick={() => setDeleteCandidate(null)} tabIndex={deleteCandidate ? 0 : -1} aria-label="取消删除目标" />
+        <section role="dialog" aria-modal="true" aria-labelledby="delete-goal-title">
+          <span className="material-symbols-outlined" aria-hidden="true">warning</span><h2 id="delete-goal-title">确认删除目标？</h2><p>“{deleteCandidate?.title}”及其相关记录将被永久删除，此操作无法撤销。</p>
+          <div><button type="button" onClick={() => setDeleteCandidate(null)} tabIndex={deleteCandidate ? 0 : -1}>取消</button><button type="button" onClick={confirmDeleteGoal} tabIndex={deleteCandidate ? 0 : -1}>确认删除</button></div>
+        </section>
+      </div>
 
       <button className={`fab goal-fab ${formOpen ? "active" : ""}`} type="button" onClick={() => setFormOpen((open) => !open)} aria-label={formOpen ? "关闭新目标表单" : "设定新目标"}>
         <span aria-hidden="true">＋</span><span className="goal-fab-label">设定新目标</span>

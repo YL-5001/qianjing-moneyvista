@@ -25,9 +25,26 @@ export async function ensureDatabase(db?: D1Database) {
     database.prepare("CREATE TABLE IF NOT EXISTS asset_accounts (id TEXT PRIMARY KEY, name TEXT NOT NULL, quadrant TEXT NOT NULL, amount INTEGER NOT NULL, performance TEXT NOT NULL, icon TEXT NOT NULL, accent TEXT NOT NULL, path TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"),
     database.prepare("CREATE TABLE IF NOT EXISTS asset_transactions (id TEXT PRIMARY KEY, account_id TEXT, title TEXT NOT NULL, date TEXT NOT NULL, amount INTEGER NOT NULL, detail TEXT NOT NULL, icon TEXT NOT NULL, created_at TEXT NOT NULL, FOREIGN KEY(account_id) REFERENCES asset_accounts(id) ON DELETE SET NULL)"),
     database.prepare("CREATE INDEX IF NOT EXISTS asset_transactions_date_idx ON asset_transactions(date)"),
+    database.prepare("CREATE TABLE IF NOT EXISTS ai_request_limits (client_hash TEXT PRIMARY KEY, window_started_at INTEGER NOT NULL, request_count INTEGER NOT NULL)"),
+    database.prepare("CREATE TABLE IF NOT EXISTS completed_goals (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed_at TEXT NOT NULL, amount INTEGER NOT NULL, created_at TEXT NOT NULL)"),
   ]);
+  await seedCompletedGoals(database);
   const initialized = await database.prepare("SELECT value FROM settings WHERE key = ?").bind("seeded").first<{ value: string }>();
   if (initialized) return;
+
+  // Never re-seed an existing database. The settings marker can be absent after
+  // an interrupted migration or a partial restore, while real user records are
+  // still present. In that case, preserve every record and only restore the
+  // marker so future feature updates cannot insert the demo data again.
+  const existingData = await database.batch([
+    database.prepare("SELECT COUNT(*) AS count FROM goals"),
+    database.prepare("SELECT COUNT(*) AS count FROM asset_accounts"),
+  ]);
+  const hasExistingRecords = existingData.some((result) => Number((result.results?.[0] as { count?: number } | undefined)?.count ?? 0) > 0);
+  if (hasExistingRecords) {
+    await database.prepare("INSERT INTO settings (key,value,updated_at) VALUES (?,?,?) ON CONFLICT(key) DO NOTHING").bind("seeded", "true", now()).run();
+    return;
+  }
 
   const createdAt = now();
   const seededGoals = [
@@ -60,12 +77,13 @@ export async function ensureDatabase(db?: D1Database) {
 export async function readFinanceData(db?: D1Database) {
   const database = db ?? await getDb();
   await ensureDatabase(database);
-  const [goalResult, recordResult, accountResult, transactionResult, settingsResult] = await database.batch([
+  const [goalResult, recordResult, accountResult, transactionResult, settingsResult, completedResult] = await database.batch([
     database.prepare("SELECT id,title,subtitle,icon,status,current_amount AS current,target_amount AS target,estimate,muted FROM goals ORDER BY created_at ASC"),
     database.prepare("SELECT id,goal_id AS goalId,date,amount,note,balance FROM goal_records ORDER BY date DESC, created_at DESC"),
     database.prepare("SELECT id,name,quadrant,amount,performance,icon,accent,path FROM asset_accounts ORDER BY created_at ASC"),
     database.prepare("SELECT id,account_id AS accountId,title,date,amount,detail,icon FROM asset_transactions ORDER BY date DESC, created_at DESC LIMIT 20"),
     database.prepare("SELECT key,value FROM settings WHERE key IN (?, ?)").bind("strategy_steady", "strategy_plan"),
+    database.prepare("SELECT id,title,completed_at AS completedAt,amount FROM completed_goals ORDER BY completed_at DESC, created_at DESC"),
   ]);
   const records = (recordResult.results ?? []) as Array<{ id: string; goalId: string; date: string; amount: number; note: string; balance: number }>;
   const goals = ((goalResult.results ?? []) as GoalRow[]).map((goal) => ({ ...goal, muted: Boolean(goal.muted), records: records.filter((record) => record.goalId === goal.id) }));
@@ -75,7 +93,18 @@ export async function readFinanceData(db?: D1Database) {
   const currentTotal = goals.reduce((sum, goal) => sum + goal.current, 0);
   const settings = new Map((settingsResult.results ?? []).map((row) => [String((row as { key: string }).key), String((row as { value: string }).value)]));
   const strategyPlan = normalizeStrategyPlan(settings.get("strategy_plan"), accounts as Array<{ id: string; quadrant: string }>);
-  return { goals, accounts, transactions: transactionResult.results ?? [], strategySteady: Number(settings.get("strategy_steady") ?? 60), strategyPlan, summary: { totalAssets, targetTotal, currentTotal, progress: targetTotal ? Math.round((currentTotal / targetTotal) * 100) : 0 } };
+  return { goals, completedGoals: completedResult.results ?? [], accounts, transactions: transactionResult.results ?? [], strategySteady: Number(settings.get("strategy_steady") ?? 60), strategyPlan, summary: { totalAssets, targetTotal, currentTotal, progress: targetTotal ? Math.round((currentTotal / targetTotal) * 100) : 0 } };
+}
+
+async function seedCompletedGoals(database: D1Database) {
+  const initialized = await database.prepare("SELECT value FROM settings WHERE key = ?").bind("completed_goals_seeded").first<{ value: string }>();
+  if (initialized) return;
+  const createdAt = now();
+  await database.batch([
+    database.prepare("INSERT INTO completed_goals (id,title,completed_at,amount,created_at) VALUES (?,?,?,?,?)").bind("completed-car", "首台汽车购置计划", "2023年10月", 350000, createdAt),
+    database.prepare("INSERT INTO completed_goals (id,title,completed_at,amount,created_at) VALUES (?,?,?,?,?)").bind("completed-emergency", "应急备用金", "2023年02月", 100000, createdAt),
+    database.prepare("INSERT INTO settings (key,value,updated_at) VALUES (?,?,?)").bind("completed_goals_seeded", "true", createdAt),
+  ]);
 }
 
 export async function createGoal(input: { title: string; target: number; current: number }) {
@@ -111,6 +140,20 @@ export async function adjustGoal(idValue: string, amount: number, note: string) 
     db.prepare("UPDATE goals SET current_amount = ?, updated_at = ? WHERE id = ?").bind(next, time, idValue),
     db.prepare("INSERT INTO goal_records (id,goal_id,date,amount,note,balance,created_at) VALUES (?,?,?,?,?,?,?)").bind(id("record"), idValue, today(), applied, note, next, time),
   ]);
+  return readFinanceData(db);
+}
+
+export async function deleteGoal(idValue: string) {
+  const db = await getDb(); await ensureDatabase(db);
+  const result = await db.prepare("DELETE FROM goals WHERE id = ?").bind(idValue).run();
+  if (!result.meta.changes) throw new Error("目标不存在");
+  return readFinanceData(db);
+}
+
+export async function deleteCompletedGoal(idValue: string) {
+  const db = await getDb(); await ensureDatabase(db);
+  const result = await db.prepare("DELETE FROM completed_goals WHERE id = ?").bind(idValue).run();
+  if (!result.meta.changes) throw new Error("已达成目标不存在");
   return readFinanceData(db);
 }
 

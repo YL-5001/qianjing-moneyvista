@@ -1,0 +1,3 @@
+# Local development only: copy this file to .dev.vars, then paste your Zhipu API key after the equals sign.
+# In production, configure GLM_API_KEY as a Cloudflare Worker secret; never commit it to the repository.
+GLM_API_KEY=

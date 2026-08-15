@@ -50,6 +50,9 @@ export default function Home() {
   const strategyPlanRef = useRef<StrategyPlan>(DEFAULT_STRATEGY);
   const [finance, setFinance] = useState<FinanceData | null>(null);
   const [savingsError, setSavingsError] = useState("");
+  const [aiAdvice, setAiAdvice] = useState("");
+  const [aiAdviceLoading, setAiAdviceLoading] = useState(false);
+  const [aiAdviceError, setAiAdviceError] = useState("");
   const amountRef = useRef<HTMLInputElement>(null);
 
   const { contextSafe } = useGSAP(() => {
@@ -147,6 +150,22 @@ export default function Home() {
     } catch (cause) { setSaved(false); setSavingsError(cause instanceof Error ? cause.message : "保存失败"); }
   };
 
+  const generateAiAdvice = async () => {
+    if (aiAdviceLoading) return;
+    try {
+      setAiAdviceLoading(true);
+      setAiAdviceError("");
+      const response = await fetch("/api/advice", { method: "POST" });
+      const payload = await response.json() as { advice?: string; error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "暂时无法生成建议");
+      setAiAdvice(payload.advice ?? "");
+    } catch (cause) {
+      setAiAdviceError(cause instanceof Error ? cause.message : "暂时无法生成建议");
+    } finally {
+      setAiAdviceLoading(false);
+    }
+  };
+
   const wealthProgress = finance?.summary.progress ?? 45;
   const primaryGoal = finance?.goals[0];
   const accountsForQuadrant = (quadrant: StrategyQuadrant): Account[] => (finance?.accounts ?? []).filter((account) => normalizeQuadrant(account.quadrant) === quadrant);
@@ -216,34 +235,40 @@ export default function Home() {
 
           <section id="dashboard" className="dashboard-grid" aria-label="财富仪表盘">
             <article className="insight-card glass-card">
-              <div className="card-heading">
-                <div className="heading-title home-insight-heading">
-                  <span className="metric-icon material-symbols-outlined" aria-hidden="true">monitoring</span>
-                  <h2>增长洞察</h2>
+                <div className="card-heading">
+                  <div className="heading-title home-insight-heading">
+                    <span className="metric-icon material-symbols-outlined" aria-hidden="true">monitoring</span>
+                    <h2>增长洞察</h2>
+                  </div>
+                  <div className="progress-copy home-progress-copy">
+                    <span>进度</span>
+                    <strong>{wealthProgress}%</strong>
+                  </div>
                 </div>
-                <div className="progress-copy home-progress-copy">
-                  <span>进度</span>
-                  <strong>{wealthProgress}%</strong>
-                </div>
-              </div>
 
-              <div className="metrics">
-                <div className="metric-tile home-metric">
-                  <span className="metric-label">本月结余</span>
-                  <strong>+¥12,400</strong>
-                  <span className="metric-detail positive"><span aria-hidden="true">↗</span> 12% 同比</span>
+                <div className="metrics">
+                  <div className="metric-tile home-metric">
+                    <span className="metric-label">本月结余</span>
+                    <strong>+¥12,400</strong>
+                    <span className="metric-detail positive"><span aria-hidden="true">↗</span> 12% 同比</span>
+                  </div>
+                  <div className="metric-tile home-metric">
+                    <span className="metric-label">投资收益</span>
+                    <strong>¥4,820</strong>
+                    <span className="metric-detail blue">年化 8.4%</span>
+                  </div>
+                  <div className="metric-tile home-metric">
+                    <span className="metric-label">预计登顶</span>
+                    <strong>14个月</strong>
+                    <span className="metric-detail">按当前速度</span>
+                  </div>
                 </div>
-                <div className="metric-tile home-metric">
-                  <span className="metric-label">投资收益</span>
-                  <strong>¥4,820</strong>
-                  <span className="metric-detail blue">年化 8.4%</span>
-                </div>
-                <div className="metric-tile home-metric">
-                  <span className="metric-label">预计登顶</span>
-                  <strong>14个月</strong>
-                  <span className="metric-detail">按当前速度</span>
-                </div>
-              </div>
+              <section className="home-ai-advice" aria-live="polite" aria-label="增长洞察 AI 陪伴规划">
+                <div className="home-ai-advice-heading"><span className="material-symbols-outlined" aria-hidden="true">auto_awesome</span><div><span>AI 陪伴规划</span><h2>下一步，向目标靠近</h2></div></div>
+                <p>{aiAdvice || "结合您的资产配置、储蓄记录与财富目标，生成一条专属的下一步行动建议。"}</p>
+                {aiAdviceError && <p className="home-ai-advice-error" role="status">{aiAdviceError}</p>}
+                <div className="home-ai-advice-footer"><button type="button" onClick={generateAiAdvice} disabled={aiAdviceLoading}>{aiAdviceLoading ? "正在规划…" : aiAdvice ? "更新建议" : "生成我的建议"}<span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button><small>生成时会向智谱发送汇总资产与目标数据</small></div>
+              </section>
             </article>
 
             <aside className="strategy-card">
@@ -294,7 +319,7 @@ export default function Home() {
                 <span className="savings-icon material-symbols-outlined" aria-hidden="true">savings</span>
                 <div>
                   <h2 id="savings-title">本月攒钱</h2>
-                  <p>一次记录，按策略分配</p>
+                  <p>每一小步，都会离巅峰更近</p>
                 </div>
               </div>
               <button className="modal-close material-symbols-outlined" type="button" onClick={() => setModalOpen(false)} aria-label="关闭">close</button>

@@ -18,6 +18,9 @@ export default function ReportsPage() {
   const [generated, setGenerated] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
   const [finance, setFinance] = useState<FinanceData | null>(null);
+  const [advice, setAdvice] = useState("");
+  const [adviceLoading, setAdviceLoading] = useState(false);
+  const [adviceError, setAdviceError] = useState("");
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -38,6 +41,23 @@ export default function ReportsPage() {
       setFormOpen(false);
       setGenerated(false);
     }, 900);
+  };
+
+  const generateAdvice = async () => {
+    if (adviceLoading) return;
+    try {
+      setAdviceLoading(true);
+      setAdviceError("");
+      const response = await fetch("/api/advice", { method: "POST" });
+      const payload = await response.json() as { advice?: string; error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "暂时无法生成建议");
+      setAdvice(payload.advice ?? "");
+      setPlanOpen(true);
+    } catch (cause) {
+      setAdviceError(cause instanceof Error ? cause.message : "暂时无法生成建议");
+    } finally {
+      setAdviceLoading(false);
+    }
   };
 
   const trendPath = range === "year"
@@ -101,9 +121,14 @@ export default function ReportsPage() {
               <span className="advice-icon material-symbols-outlined" aria-hidden="true">auto_awesome</span>
               <div>
                 <h2>攀登建议：AI 深度优化</h2>
-                <p>基于您近三个月的消费模式，我们发现您的“非必要生活开支”占比有所上升。如果将这部分资金的 30% 转移至“全球指数基金”，按照 7% 的预期年化收益率，您将提前 14 个月达成“退休金储备”目标。</p>
+                <p>{advice || "基于您近三个月的消费模式，我们发现您的“非必要生活开支”占比有所上升。如果将这部分资金的 30% 转移至“全球指数基金”，按照 7% 的预期年化收益率，您将提前 14 个月达成“退休金储备”目标。"}</p>
+                {adviceError && <p className="advice-error" role="status">{adviceError}</p>}
                 {planOpen && <div className="advice-plan"><span>建议每月转入</span><strong>¥3,720</strong><span>预计新增长期收益</span><strong>¥186,400</strong></div>}
-                <button type="button" onClick={() => setPlanOpen((open) => !open)}>{planOpen ? "收起优化方案" : "查看优化方案"}<span className="material-symbols-outlined" aria-hidden="true">{planOpen ? "arrow_upward" : "arrow_forward"}</span></button>
+                <div className="advice-actions">
+                  <button type="button" onClick={generateAdvice} disabled={adviceLoading}>{adviceLoading ? "GLM 正在分析…" : "使用 GLM 生成建议"}<span className="material-symbols-outlined" aria-hidden="true">auto_awesome</span></button>
+                  <button type="button" onClick={() => setPlanOpen((open) => !open)}>{planOpen ? "收起优化方案" : "查看优化方案"}<span className="material-symbols-outlined" aria-hidden="true">{planOpen ? "arrow_upward" : "arrow_forward"}</span></button>
+                </div>
+                <small className="advice-disclosure">生成时会向智谱发送本页汇总的资产与目标数据。</small>
               </div>
             </article>
           </section>

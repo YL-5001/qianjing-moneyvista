@@ -53,3 +53,17 @@ export const settings = sqliteTable("settings", {
   value: text("value").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+export const completedGoals = sqliteTable("completed_goals", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  completedAt: text("completed_at").notNull(),
+  amount: integer("amount").notNull(),
+  createdAt: text("created_at").notNull(),
+});
+
+export const aiRequestLimits = sqliteTable("ai_request_limits", {
+  clientHash: text("client_hash").primaryKey(),
+  windowStartedAt: integer("window_started_at").notNull(),
+  requestCount: integer("request_count").notNull(),
+});

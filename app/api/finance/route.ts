@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adjustGoal, createAccount, createGoal, deleteAccount, readFinanceData, saveSavings, setStrategy, setStrategyPlan, updateAccount, updateGoal } from "../../../db/runtime";
+import { adjustGoal, createAccount, createGoal, deleteAccount, deleteCompletedGoal, deleteGoal, readFinanceData, saveSavings, setStrategy, setStrategyPlan, updateAccount, updateGoal } from "../../../db/runtime";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +17,8 @@ export async function POST(request: Request) {
     if (action === "createGoal") result = await createGoal({ title: String(body.title ?? "").trim(), target: Number(body.target), current: Math.max(0, Number(body.current) || 0) });
     else if (action === "updateGoal") result = await updateGoal(String(body.id), { title: typeof body.title === "string" ? body.title : undefined, target: body.target === undefined ? undefined : Number(body.target) });
     else if (action === "adjustGoal") result = await adjustGoal(String(body.id), Number(body.amount), String(body.note ?? "手动调整"));
+    else if (action === "deleteGoal") result = await deleteGoal(String(body.id));
+    else if (action === "deleteCompletedGoal") result = await deleteCompletedGoal(String(body.id));
     else if (action === "createAccount") result = await createAccount({ name: String(body.name ?? "").trim(), amount: Number(body.amount), quadrant: String(body.quadrant ?? "其他账户") });
     else if (action === "updateAccount") result = await updateAccount(String(body.id), { name: String(body.name ?? ""), amount: Number(body.amount), quadrant: String(body.quadrant ?? "") });
     else if (action === "deleteAccount") result = await deleteAccount(String(body.id));

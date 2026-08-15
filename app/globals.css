@@ -123,6 +123,18 @@ button { color: inherit; }
 .metric-detail { display: block; color: var(--muted); margin-top: 7px; font-size: 12px; }
 .metric-detail.positive { color: #16a35a; }
 .metric-detail.blue { color: var(--sky); }
+.home-ai-advice { margin-top: 24px; padding: 22px 0 0; border-top: 1px solid rgba(135,206,235,.26); }
+.home-ai-advice-heading { display: flex; align-items: center; gap: 12px; }
+.home-ai-advice-heading > .material-symbols-outlined { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; color: #007ca4; background: rgba(135,206,235,.25); font-size: 21px; }
+.home-ai-advice-heading > div > span { display: block; margin-bottom: 2px; color: var(--sky-deep); font-size: 11px; font-weight: 700; }
+.home-ai-advice h2 { margin: 0; font-size: 17px; }
+.home-ai-advice > p { margin: 15px 0 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.home-ai-advice-error { color: #c94b4b !important; }
+.home-ai-advice-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 17px; }
+.home-ai-advice button { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; color: var(--sky-deep); background: transparent; cursor: pointer; font-size: 13px; font-weight: 700; }
+.home-ai-advice button:disabled { cursor: wait; opacity: .62; }
+.home-ai-advice button .material-symbols-outlined { font-size: 16px; }
+.home-ai-advice small { color: var(--muted); font-size: 10px; text-align: right; }
 
 .strategy-card { position: sticky; top: 96px; min-height: 548px; perspective: 1400px; }
 .strategy-card-inner { position: relative; width: 100%; min-height: 548px; transform-style: preserve-3d; transform-origin: center; will-change: transform; }
@@ -285,6 +297,9 @@ button { color: inherit; }
 .goal-adjust-row .add { color: white; background: var(--sky); box-shadow: 0 7px 18px rgba(135,206,235,.34); }
 .goal-adjust-panel p { min-height: 17px; margin: 7px 0 0; color: var(--muted); font-size: 11px; transition: color .2s, transform .2s; }
 .goal-adjust-panel p.visible { color: #08708b; font-weight: 700; transform: translateX(3px); }
+.goal-delete-trigger { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; padding: 3px 0; border: 0; color: #a75a55; background: transparent; cursor: pointer; font-size: 10px; opacity: .72; }
+.goal-delete-trigger:hover, .goal-delete-trigger:focus-visible { color: #b42318; opacity: 1; outline: 0; text-decoration: underline; text-underline-offset: 3px; }
+.goal-delete-trigger .material-symbols-outlined { font-size: 13px; }
 .goal-history-drawer { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; padding: 28px 30px; border-radius: inherit; background: linear-gradient(145deg,rgba(250,253,254,.985),rgba(237,248,252,.975)); box-shadow: -14px 0 35px rgba(22,45,55,.09); backdrop-filter: blur(24px); opacity: .55; pointer-events: none; transform: translateX(104%); transition: transform .34s cubic-bezier(.16,1,.3,1), opacity .24s ease; }
 .goal-history-drawer.open { opacity: 1; pointer-events: auto; transform: translateX(0); }
 .goal-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
@@ -317,11 +332,23 @@ button { color: inherit; }
 .completed-heading h2 { margin: 0; font-size: 36px; line-height: 1.2; letter-spacing: -.025em; }
 .completed-heading > span { flex: 1; height: 1px; background: #e2e2e4; }
 .completed-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 32px; }
-.completed-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 22px; min-height: 104px; padding: 24px; border: 1px solid rgba(255,255,255,.65); border-radius: 16px; background: #f3f3f5; box-shadow: 0 3px 10px rgba(0,0,0,.025); }
+.completed-card { display: grid; grid-template-columns: auto minmax(0,1fr) auto auto; align-items: center; gap: 22px; min-height: 104px; padding: 24px; border: 1px solid rgba(255,255,255,.65); border-radius: 16px; background: #f3f3f5; box-shadow: 0 3px 10px rgba(0,0,0,.025); }
 .completed-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; color: #08708b; background: rgba(135,206,235,.22); font-size: 31px; font-variation-settings: "FILL" 1; }
 .completed-card h3 { margin: 0 0 3px; font-size: 22px; line-height: 1.25; }
 .completed-card p { margin: 0; color: var(--muted); font-size: 14px; }
 .completed-card > strong { color: #00627b; font-size: 17px; white-space: nowrap; }
+.completed-delete-trigger { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 7px; color: #a75a55; background: transparent; cursor: pointer; opacity: .58; }
+.completed-delete-trigger:hover, .completed-delete-trigger:focus-visible { color: #b42318; background: rgba(232,67,54,.1); opacity: 1; outline: 0; }
+.completed-delete-trigger .material-symbols-outlined { font-size: 16px; }
+.completed-empty { grid-column: 1 / -1; margin: 0; padding: 24px; border-radius: 14px; color: var(--muted); background: #f3f3f5; font-size: 13px; text-align: center; }
+.goal-delete-dialog { position: fixed; z-index: 80; inset: 0; display: grid; place-items: center; padding: 20px; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s,visibility .2s; }
+.goal-delete-dialog.open { opacity: 1; visibility: visible; pointer-events: auto; }
+.goal-delete-backdrop { position: absolute; inset: 0; border: 0; background: rgba(20,35,42,.27); backdrop-filter: blur(3px); }
+.goal-delete-dialog section { position: relative; width: min(100%,360px); padding: 28px; border: 1px solid rgba(255,255,255,.75); border-radius: 16px; background: rgba(250,252,253,.97); box-shadow: 0 28px 70px rgba(0,0,0,.16); transform: translateY(10px) scale(.98); transition: transform .24s cubic-bezier(.16,1,.3,1); }
+.goal-delete-dialog.open section { transform: translateY(0) scale(1); }
+.goal-delete-dialog section > .material-symbols-outlined { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: #b42318; background: rgba(232,67,54,.11); }
+.goal-delete-dialog h2 { margin: 13px 0 7px; font-size: 21px; }.goal-delete-dialog p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.goal-delete-dialog section > div { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 23px; }.goal-delete-dialog section > div button { height: 39px; border: 0; border-radius: 8px; background: #edf0f1; cursor: pointer; font-size: 13px; font-weight: 700; }.goal-delete-dialog section > div button:last-child { color: white; background: #d92d20; }
 .new-goal-popover { position: fixed; z-index: 55; right: 40px; bottom: 126px; width: 320px; padding: 24px; border: 1px solid rgba(255,255,255,.65); border-radius: 16px; background: rgba(249,249,251,.92); box-shadow: 0 20px 50px rgba(0,0,0,.12); backdrop-filter: blur(24px); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(16px) scale(.98); transition: opacity .25s, transform .25s, visibility .25s; }
 .new-goal-popover.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0) scale(1); }
 .new-goal-popover h2 { margin: 0 0 18px; font-size: 24px; }
@@ -551,6 +578,11 @@ button { color: inherit; }
 .report-advice button { display: flex; align-items: center; gap: 7px; margin-top: 22px; padding: 0; border: 0; color: var(--sky); background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; }
 .report-advice button:hover { text-decoration: underline; text-underline-offset: 4px; }
 .report-advice button .material-symbols-outlined { font-size: 15px; }
+.advice-actions { display: flex; flex-wrap: wrap; gap: 22px; }
+.report-advice .advice-actions button { margin-top: 22px; }
+.report-advice button:disabled { cursor: wait; opacity: .62; text-decoration: none; }
+.report-advice .advice-error { color: #c94b4b; font-size: 13px; }
+.advice-disclosure { display: block; margin-top: 10px; color: var(--muted); font-size: 11px; }
 .advice-plan { display: grid; grid-template-columns: auto auto auto auto; align-items: center; justify-content: start; gap: 9px 28px; margin-top: 18px; padding: 15px 17px; border-radius: 10px; background: rgba(255,255,255,.66); animation: goal-rise .35s ease both; }
 .advice-plan span { color: var(--muted); font-size: 11px; }
 .advice-plan strong { color: var(--sky-deep); font-size: 17px; }
@@ -605,6 +637,9 @@ button { color: inherit; }
   .hero p { font-size: 17px; }
   .dashboard-grid { grid-template-columns: 1fr; gap: 24px; }
   .insight-card { margin-top: 90px; padding: 24px; }
+  .home-ai-advice { padding: 20px 0 0; }
+  .home-ai-advice-footer { align-items: flex-start; flex-direction: column; gap: 9px; }
+  .home-ai-advice small { text-align: left; }
   .metrics { grid-template-columns: 1fr; gap: 14px; }
   .card-heading { margin-bottom: 30px; }
   .strategy-card { position: relative; top: auto; padding: 0; }
@@ -632,6 +667,7 @@ button { color: inherit; }
   .completed-heading h2 { font-size: 30px; }
   .completed-card { gap: 14px; padding: 20px; }
   .completed-card > strong { grid-column: 2; }
+  .completed-delete-trigger { grid-column: 3; grid-row: 1 / span 2; }
   .new-goal-popover { right: 20px; bottom: 100px; width: calc(100% - 40px); }
   .goal-fab-label { display: none; }
   .assets-page { padding: 88px 0 100px; }
